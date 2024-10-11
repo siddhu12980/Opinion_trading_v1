@@ -1,70 +1,9 @@
 import express, { Request, Response, NextFunction } from "express";
 import { INRBalances, MarketMakerOrderRequest, OrderBook, StockBalances, StockPool } from "./interface/interface";
 import { v4 as uuidv4 } from 'uuid';
+import { INR_BALANCES, ORDERBOOK, SELL_ORDERBOOK, STOCK_BALANCES, STOCK_POOL } from "./constants/const";
 const app = express();
 const port = 3000;
-
-const ORDERBOOK: OrderBook = {
-  "BTC_USDT_10_Oct_2024_9_30": {
-    "yes": {
-      "9.5": {
-        "total": 12,
-        orders: {
-          "user1": 2,
-          "user2": 10
-        }
-      },
-      "8.5": {
-        "total": 12,
-        "orders": {
-          "user1": 3,
-          "user2": 3,
-          "user3": 6
-        }
-      },
-    },
-    "no": {
-
-    }
-  }
-}
-
-const INR_BALANCES: INRBalances = {
-  "user1": {
-    balance: 100,
-    locked: 0
-  },
-  "user2": {
-    "balance": 400,
-    locked: 200
-  }
-};
-const STOCK_POOL: StockPool = {
-  "user11": {
-    "BTC_USDT_10_Oct_2024_9_30": 100
-  },
-  "user21": {
-    "abc": 200
-  }
-};
-const STOCK_BALANCES: StockBalances = {
-  user1: {
-    "BTC_USDT_10_Oct_2024_9_30": {
-      "yes": {
-        "quantity": 1,
-        "locked": 0
-      }
-    }
-  },
-  user2: {
-    "BTC_USDT_10_Oct_2024_9_30": {
-      "no": {
-        "quantity": 3,
-        "locked": 4
-      }
-    }
-  }
-}
 
 
 app.use(express.json());
@@ -170,15 +109,33 @@ app.post("/trade/mint/:stockSymbol", (req: Request, res: Response, next: NextFun
       res.status(400).json({ message: "Missing required parameters" });
     }
 
-    if (!STOCK_POOL[userId]) {
-      STOCK_POOL[userId] = {};
+    if (!STOCK_BALANCES[userId]) {
+      STOCK_BALANCES[userId] = {};
     }
 
-    if (!STOCK_POOL[userId][stockSymbol]) {
-      STOCK_POOL[userId][stockSymbol] = quantity;
-    } else {
-      STOCK_POOL[userId][stockSymbol] += quantity;
+    if (!STOCK_BALANCES[userId][stockSymbol]) {
+      STOCK_BALANCES[userId][stockSymbol] = {}
     }
+
+    if (!STOCK_BALANCES[userId][stockSymbol].yes) {
+      STOCK_BALANCES[userId][stockSymbol]["yes"] = {
+        quantity: quantity,
+        locked: 0
+      }
+    } else {
+      STOCK_BALANCES[userId][stockSymbol]["yes"].quantity += quantity
+      console.log(STOCK_BALANCES[userId][stockSymbol]["yes"].quantity);
+    }
+
+    if (!STOCK_BALANCES[userId][stockSymbol].no) {
+      STOCK_BALANCES[userId][stockSymbol]["no"] = {
+        quantity: quantity,
+        locked: 0
+      }
+    } else {
+      STOCK_BALANCES[userId][stockSymbol]["no"].quantity += quantity
+    }
+
 
     if (!ORDERBOOK[stockSymbol]) {
       ORDERBOOK[stockSymbol] = { yes: {}, no: {} };
@@ -186,7 +143,7 @@ app.post("/trade/mint/:stockSymbol", (req: Request, res: Response, next: NextFun
 
     res.json({
       message: `Stock ${stockSymbol} minted for user ${userId}`,
-      stockPool: STOCK_POOL[userId],
+      STOCK_BALANCES: STOCK_BALANCES[userId],
       orderBook: ORDERBOOK[stockSymbol]
     });
   } catch (error) {
@@ -236,6 +193,134 @@ app.post("/trade/market", (req: Request<{}, {}, MarketMakerOrderRequest>, res: R
     next(error);
   }
 });
+// create a sell and buy order for yes 
+// first only create sell order
+app.post("/trade/yes", (req: Request, res: Response, next: NextFunction) => {
+
+  const symb = "yes"
+  try {
+    const { userId, stockSymbol, quantity, price } = req.body;
+
+    if (!userId || !stockSymbol || !quantity || !price) {
+      res.status(400).json({ message: "Missing required parameters" });
+    }
+
+    const user_stock_balance = STOCK_BALANCES[userId]
+
+    if (!user_stock_balance) {
+      res.status(400).json({
+        "message": "User Doesnt exists"
+      })
+    }
+
+    if (!user_stock_balance[stockSymbol]) {
+      res.status(400).json({
+        "message": "User dont have corrosponding Stock"
+      })
+    }
+
+    if (!(user_stock_balance[stockSymbol][symb]) || user_stock_balance[stockSymbol][symb].quantity < quantity) {
+      res.status(400).json({ message: "Insufficient stock balance to place order." });
+    }
+
+    if (!SELL_ORDERBOOK[stockSymbol]) {
+      SELL_ORDERBOOK[stockSymbol] = { yes: {}, no: {} };
+    }
+    const ordersPriceCheck = SELL_ORDERBOOK[stockSymbol].yes;
+
+    if (!ordersPriceCheck[price]) {
+      ordersPriceCheck[price] = { total: 0, orders: {} };
+    }
+
+    const orderList = ordersPriceCheck[price].orders;
+    if (!orderList[userId]) {
+      orderList[userId] = quantity;
+    } else {
+      orderList[userId] += quantity;
+    }
+
+    ordersPriceCheck[price].total += quantity;
+
+
+    user_stock_balance[stockSymbol][symb]!.quantity -= quantity
+    user_stock_balance[stockSymbol][symb]!.locked += quantity
+
+    res.json({
+      message: "Market sell yes Order placed successfully",
+      orders: SELL_ORDERBOOK[stockSymbol],
+      updatedBalance: user_stock_balance
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+app.post("/trade/no", (req: Request, res: Response, next: NextFunction) => {
+
+  const symb = "no"
+  try {
+    const { userId, stockSymbol, quantity, price } = req.body;
+
+    if (!userId || !stockSymbol || !quantity || !price) {
+      res.status(400).json({ message: "Missing required parameters" });
+    }
+
+    const user_stock_balance = STOCK_BALANCES[userId]
+
+    if (!user_stock_balance) {
+      res.status(400).json({
+        "message": "User Doesnt exists"
+      })
+    }
+
+    if (!user_stock_balance[stockSymbol]) {
+      res.status(400).json({
+        "message": "User dont have corrosponding Stock"
+      })
+    }
+    console.log("checking user balance")
+    console.log(user_stock_balance)
+    console.log(symb)
+    console.log(user_stock_balance[stockSymbol][symb]?.quantity, user_stock_balance[stockSymbol][symb], user_stock_balance[stockSymbol])
+    if (!(user_stock_balance[stockSymbol][symb]) || user_stock_balance[stockSymbol][symb].quantity < quantity) {
+      res.status(400).json({ message: "Insufficient stock balance to place order..." });
+    }
+
+    if (!SELL_ORDERBOOK[stockSymbol]) {
+      SELL_ORDERBOOK[stockSymbol] = { yes: {}, no: {} };
+    }
+    const ordersPriceCheck = SELL_ORDERBOOK[stockSymbol].no;
+
+    if (!ordersPriceCheck[price]) {
+      ordersPriceCheck[price] = { total: 0, orders: {} };
+    }
+
+    const orderList = ordersPriceCheck[price].orders;
+    if (!orderList[userId]) {
+      orderList[userId] = quantity;
+    } else {
+      orderList[userId] += quantity;
+    }
+
+    ordersPriceCheck[price].total += quantity;
+
+
+    user_stock_balance[stockSymbol][symb]!.quantity -= quantity
+    user_stock_balance[stockSymbol][symb]!.locked += quantity
+
+    res.json({
+      message: "Market sell No Order placed successfully",
+      orders: SELL_ORDERBOOK[stockSymbol],
+      updatedBalance: user_stock_balance
+    });
+
+  } catch (error) {
+    next(error);
+  }
+});
+
+
 
 app.post("/order/yes", (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -338,6 +423,16 @@ app.get("/orderbook/:stockSymbol", (req: Request, res: Response, next: NextFunct
   }
 });
 
+app.get("/balance/stock/:userId", (req: Request, res: Response) => {
+  try {
+    const user = req.params.userId
+    res.json({
+      "balance": STOCK_BALANCES[user]
+    })
+
+  } catch (error) {
+  }
+})
 app.use(errorHandler);
 
 app.listen(port, () => {
