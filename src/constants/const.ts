@@ -69,14 +69,6 @@ export const INR_BALANCES: INRBalances = {
     locked: 200
   }
 };
-export const STOCK_POOL: StockPool = {
-  "user11": {
-    "BTC_USDT_10_Oct_2024_9_30": 100
-  },
-  "user21": {
-    "abc": 200
-  }
-};
 export const STOCK_BALANCES: StockBalances = {
   user1: {
     "BTC_USDT_10_Oct_2024_9_30": {
@@ -89,6 +81,12 @@ export const STOCK_BALANCES: StockBalances = {
         locked: 0
 
       }
+    },
+    "btc": {
+      "no": {
+        "quantity": 20,
+        "locked": 5
+      }
     }
   },
   user2: {
@@ -96,6 +94,12 @@ export const STOCK_BALANCES: StockBalances = {
       "no": {
         "quantity": 3,
         "locked": 4
+      }
+    },
+    "btc": {
+      "yes": {
+        "quantity": 10,
+        "locked": 1
       }
     }
   }

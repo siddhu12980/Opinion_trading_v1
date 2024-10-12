@@ -1,8 +1,8 @@
 import { Request, Response, NextFunction } from "express";
-
 import { INR_BALANCES, ORDERBOOK } from "../constants/const";
 
-export function yesOrder(req: Request, res: Response, next: NextFunction) {
+export const buyYesOrder = (req: Request, res: Response, next: NextFunction) => {
+
   try {
     const { userId, stockSymbol, quantity, price } = req.body;
 
@@ -44,9 +44,10 @@ export function yesOrder(req: Request, res: Response, next: NextFunction) {
   } catch (error) {
     next(error);
   }
-}
+};
 
-export function noOrdercontoller(req: Request, res: Response, next: NextFunction) {
+
+export const buyNoOrder = (req: Request, res: Response, next: NextFunction) => {
   try {
     const { userId, stockSymbol, quantity, price } = req.body;
 
@@ -88,18 +89,4 @@ export function noOrdercontoller(req: Request, res: Response, next: NextFunction
   } catch (error) {
     next(error);
   }
-}
-
-
-export function orderAll(req: Request, res: Response, next: NextFunction) {
-  try {
-    const stockSymbol = req.params.stockSymbol;
-    const orderbook = ORDERBOOK[stockSymbol];
-    if (!orderbook) {
-      res.status(404).json({ message: "Orderbook not found for this stock" });
-    }
-    res.json({ orderbook });
-  } catch (error) {
-    next(error);
-  }
-}
+};

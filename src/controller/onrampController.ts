@@ -2,7 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import { INR_BALANCES } from "../constants/const";
 
 
-export function onrampController(req: Request, res: Response, next: NextFunction) {
+
+export const onrampINR = (req: Request, res: Response, next: NextFunction) => {
   try {
     const { userId, amount } = req.body;
     if (!userId || !amount) {
@@ -17,4 +18,4 @@ export function onrampController(req: Request, res: Response, next: NextFunction
   } catch (error) {
     next(error);
   }
-}
+};
