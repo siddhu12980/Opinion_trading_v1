@@ -8,7 +8,6 @@ const port = 3000;
 
 app.use(express.json());
 
-// Error handling middleware
 const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error(err.stack);
   res.status(500).json({ message: "Internal server error", error: err.message });
@@ -151,51 +150,7 @@ app.post("/trade/mint/:stockSymbol", (req: Request, res: Response, next: NextFun
   }
 });
 
-app.post("/trade/market", (req: Request<{}, {}, MarketMakerOrderRequest>, res: Response, next: NextFunction) => {
-  try {
-    const { userId, stockSymbol, quantity, price, yesOrNo } = req.body;
-
-    const userStockPool = STOCK_POOL[userId];
-    if (!userStockPool) {
-      res.status(403).json({ message: "User is not a market maker" });
-    }
-
-    if (!userStockPool[stockSymbol] || userStockPool[stockSymbol] < quantity) {
-      res.status(400).json({ message: "Insufficient stock in pool to place order." });
-    }
-
-    userStockPool[stockSymbol] -= quantity;
-
-    if (!ORDERBOOK[stockSymbol]) {
-      ORDERBOOK[stockSymbol] = { yes: {}, no: {} };
-    }
-
-    if (!ORDERBOOK[stockSymbol][yesOrNo][price]) {
-      ORDERBOOK[stockSymbol][yesOrNo][price] = { total: 0, orders: {} };
-    }
-
-    if (!STOCK_BALANCES[userId]) {
-      STOCK_BALANCES[userId] = {};
-    }
-    if (!STOCK_BALANCES[userId][stockSymbol]) {
-      STOCK_BALANCES[userId][stockSymbol] = { yes: { quantity: 0, locked: 0 }, no: { quantity: 0, locked: 0 } };
-    }
-
-    STOCK_BALANCES[userId][stockSymbol][yesOrNo]!.quantity += quantity;
-
-    res.json({
-      message: `Market maker order placed for ${quantity} of ${stockSymbol} at price ${price}`,
-      orderbook: ORDERBOOK[stockSymbol],
-      updatedStockPool: userStockPool,
-      updatedStockBalance: STOCK_BALANCES[userId][stockSymbol]
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-// create a sell and buy order for yes 
-// first only create sell order
-app.post("/trade/yes", (req: Request, res: Response, next: NextFunction) => {
+app.post("/order/sell/yes", (req: Request, res: Response, next: NextFunction) => {
 
   const symb = "yes"
   try {
@@ -241,6 +196,15 @@ app.post("/trade/yes", (req: Request, res: Response, next: NextFunction) => {
 
     ordersPriceCheck[price].total += quantity;
 
+    if (!user_stock_balance[stockSymbol][symb]) {
+      console.log(
+        user_stock_balance[stockSymbol]
+      )
+    }
+
+    console.log(
+      user_stock_balance[stockSymbol][symb]
+    )
 
     user_stock_balance[stockSymbol][symb]!.quantity -= quantity
     user_stock_balance[stockSymbol][symb]!.locked += quantity
@@ -256,8 +220,7 @@ app.post("/trade/yes", (req: Request, res: Response, next: NextFunction) => {
 });
 
 
-app.post("/trade/no", (req: Request, res: Response, next: NextFunction) => {
-
+app.post("/order/sell/no", (req: Request, res: Response, next: NextFunction) => {
   const symb = "no"
   try {
     const { userId, stockSymbol, quantity, price } = req.body;
@@ -322,7 +285,7 @@ app.post("/trade/no", (req: Request, res: Response, next: NextFunction) => {
 
 
 
-app.post("/order/yes", (req: Request, res: Response, next: NextFunction) => {
+app.post("/order/buy/yes", (req: Request, res: Response, next: NextFunction) => {
   try {
     const { userId, stockSymbol, quantity, price } = req.body;
 
@@ -366,7 +329,7 @@ app.post("/order/yes", (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-app.post("/order/no", (req: Request, res: Response, next: NextFunction) => {
+app.post("/order/buy/no", (req: Request, res: Response, next: NextFunction) => {
   try {
     const { userId, stockSymbol, quantity, price } = req.body;
 
@@ -410,7 +373,8 @@ app.post("/order/no", (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-app.get("/orderbook/:stockSymbol", (req: Request, res: Response, next: NextFunction) => {
+
+app.get("/orderbook/buy/:stockSymbol", (req: Request, res: Response, next: NextFunction) => {
   try {
     const stockSymbol = req.params.stockSymbol;
     const orderbook = ORDERBOOK[stockSymbol];
@@ -422,6 +386,21 @@ app.get("/orderbook/:stockSymbol", (req: Request, res: Response, next: NextFunct
     next(error);
   }
 });
+
+
+app.get("/orderbook/sell/:stockSymbol", (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const stockSymbol = req.params.stockSymbol;
+    const orderbook = SELL_ORDERBOOK[stockSymbol];
+    if (!orderbook) {
+      res.status(404).json({ message: "Orderbook not found for this stock" });
+    }
+    res.json({ orderbook });
+  } catch (error) {
+    next(error);
+  }
+});
+
 
 app.get("/balance/stock/:userId", (req: Request, res: Response) => {
   try {
