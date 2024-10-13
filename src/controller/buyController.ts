@@ -1,9 +1,13 @@
 import { Request, Response, NextFunction } from "express";
 import { INR_BALANCES, ORDERBOOK } from "../constants/const";
+import createConnection from "./redisController";
 
-export const buyYesOrder = (req: Request, res: Response, next: NextFunction) => {
+
+export const buyYesOrder = async (req: Request, res: Response, next: NextFunction) => {
 
   try {
+    const client = await createConnection();
+
     const { userId, stockSymbol, quantity, price } = req.body;
 
     if (!userId || !stockSymbol || !quantity || !price) {
@@ -36,9 +40,12 @@ export const buyYesOrder = (req: Request, res: Response, next: NextFunction) => 
     userBalance.balance -= quantity * price;
     userBalance.locked += quantity * price;
 
+
+    client.lPush("buy_order_book", JSON.stringify(ORDERBOOK))
+
     res.json({
       message: "Order placed successfully",
-      orders: ORDERBOOK[stockSymbol],
+      orders: ORDERBOOK,
       updatedBalance: userBalance
     });
   } catch (error) {
@@ -47,8 +54,10 @@ export const buyYesOrder = (req: Request, res: Response, next: NextFunction) => 
 };
 
 
-export const buyNoOrder = (req: Request, res: Response, next: NextFunction) => {
+export const buyNoOrder = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const client = await createConnection()
+
     const { userId, stockSymbol, quantity, price } = req.body;
 
     if (!userId || !stockSymbol || !quantity || !price) {
@@ -81,9 +90,13 @@ export const buyNoOrder = (req: Request, res: Response, next: NextFunction) => {
     userBalance.balance -= quantity * price;
     userBalance.locked += quantity * price;
 
+
+    client.lPush("buy_order_book", JSON.stringify(ORDERBOOK))
+
+
     res.json({
       message: "Order placed successfully",
-      orders: ORDERBOOK[stockSymbol],
+      orders: ORDERBOOK,
       updatedBalance: userBalance
     });
   } catch (error) {

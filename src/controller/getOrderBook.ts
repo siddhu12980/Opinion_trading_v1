@@ -7,7 +7,9 @@ export const getOrderbookSell = (req: Request, res: Response, next: NextFunction
     if (!stockOrders) {
       res.status(405).json({ message: "No orders found for the stock" });
     }
-    res.json({ orders: stockOrders });
+    else {
+      res.json({ orders: stockOrders });
+    }
   } catch (error) {
     next(error);
   }
@@ -18,8 +20,9 @@ export const getOrderbookBuy = (req: Request, res: Response, next: NextFunction)
     const stockOrders = ORDERBOOK[stockSymbol]?.yes;
     if (!stockOrders) {
       res.status(404).json({ message: "No orders found for the stock" });
+    } else {
+      res.json({ orders: stockOrders });
     }
-    res.json({ orders: stockOrders });
   } catch (error) {
     next(error);
   }

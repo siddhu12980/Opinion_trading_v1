@@ -1,4 +1,4 @@
-import { INRBalances, OrderBook, StockBalances, StockPool } from "../interface/interface";
+import { INRBalances, OrderBook, StockBalances } from "../interface/interface";
 
 export const ORDERBOOK: OrderBook = {
   "BTC_USDT_10_Oct_2024_9_30": {
@@ -24,7 +24,6 @@ export const ORDERBOOK: OrderBook = {
     }
   }
 }
-
 
 export const SELL_ORDERBOOK: OrderBook = {
   "BTC_USDT_10_Oct_2024_9_30": {
