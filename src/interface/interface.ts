@@ -18,21 +18,21 @@ export interface StockPool {
 export interface Order {
   total: number;
   orders: {
-    [userId: string]: number; // User ID as the key and quantity as the value
+    [userId: string]: number;
   };
 }
 
 export interface Outcome {
-  [price: string]: Order; // Price as the key and Order as the value
+  [price: string]: Order;
 }
 
 export interface OrderBookEntry {
-  yes: Outcome; // Outcome for "yes" orders
-  no: Outcome;  // Outcome for "no" orders
+  yes: Outcome;
+  no: Outcome;
 }
 
 export interface OrderBook {
-  [contract: string]: OrderBookEntry; // Contract name as the key
+  [contract: string]: OrderBookEntry;
 }
 
 
@@ -43,13 +43,13 @@ export interface Stock {
 
 export interface UserStockBalances {
   [contract: string]: {
-    yes?: Stock; // Optional because it can be either "yes" or "no"
+    yes?: Stock;
     no?: Stock;
   };
 }
 
 export interface StockBalances {
-  [userId: string]: UserStockBalances; // User ID as the key
+  [userId: string]: UserStockBalances;
 }
 
 

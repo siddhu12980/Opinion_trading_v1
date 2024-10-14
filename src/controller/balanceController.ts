@@ -6,7 +6,7 @@ export const getINRBalance = (req: Request, res: Response, next: NextFunction) =
     const user = req.params.userId;
     const foundUser = INR_BALANCES[user];
     if (!foundUser) {
-       res.status(404).json({ message: "User not found" });
+      res.status(404).json({ message: "User not found" });
     }
     res.json({ user: foundUser });
   } catch (error) {
@@ -22,6 +22,31 @@ export const getStockBalance = (req: Request, res: Response, next: NextFunction)
       res.status(404).json({ message: "No stock balance found for the user" });
     }
     res.json({ balance: stockBalance });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+export const getallINRBalance = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const foundUser = INR_BALANCES;
+    if (!foundUser) {
+      res.status(404).json({ message: "Balance Book Not Found" });
+    }
+    res.json(foundUser);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getallStockBalance = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const stockBalance = STOCK_BALANCES;
+    if (!stockBalance) {
+      res.status(404).json({ message: "No stock balance book found" });
+    }
+    res.json(stockBalance);
   } catch (error) {
     next(error);
   }

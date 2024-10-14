@@ -29,24 +29,20 @@ function processOrderBooks(buyOrderBook: OrderBook, sellOrderBook: OrderBook): v
         const sellPrices = sellOrderBook[stockName][section];
         for (const buyPrice in buyPrices) {
           if (sellPrices[buyPrice]) {
-            // Prices match, process orders
             const buyOrders = buyPrices[buyPrice].orders;
             const sellOrders = sellPrices[buyPrice].orders;
             for (const buyer in buyOrders) {
               for (const seller in sellOrders) {
                 const quantity = Math.min(buyOrders[buyer], sellOrders[seller]);
                 if (quantity > 0) {
-                  // Mark transaction complete
                   if (!transactionComplete[stockName]) {
                     transactionComplete[stockName] = { yes: {}, no: {} };
                   }
                   if (!transactionComplete[stockName][section][buyPrice]) {
                     transactionComplete[stockName][section][buyPrice] = { total: 0, orders: {} };
                   }
-                  // Update completed transaction
                   transactionComplete[stockName][section][buyPrice].total += quantity;
                   transactionComplete[stockName][section][buyPrice].orders[buyer] = (transactionComplete[stockName][section][buyPrice].orders[buyer] || 0) + quantity;
-                  // Reduce the quantity from the original order books
                   buyOrders[buyer] -= quantity;
                   sellOrders[seller] -= quantity;
                   if (buyOrders[buyer] <= 0) delete buyOrders[buyer];

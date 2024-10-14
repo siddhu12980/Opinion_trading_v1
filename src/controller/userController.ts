@@ -6,7 +6,7 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
   try {
     const { user, isMarketMaker } = req.body;
     if (!user) {
-       res.status(400).json({ message: "User information is required" });
+      res.status(400).json({ message: "User information is required" });
     }
     const username = uuidv4();
 
