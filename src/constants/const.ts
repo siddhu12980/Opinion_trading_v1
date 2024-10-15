@@ -25,39 +25,6 @@ export const ORDERBOOK: OrderBook = {
   }
 }
 
-export const SELL_ORDERBOOK: OrderBook = {
-  "BTC_USDT_10_Oct_2024_9_30": {
-    "yes": {
-      "9.5": {
-        "total": 12,
-        orders: {
-          "user1": 2,
-          "user2": 10
-        }
-      },
-      "8.5": {
-        "total": 12,
-        "orders": {
-          "user1": 3,
-          "user2": 3,
-          "user3": 6
-        }
-      },
-    },
-    "no": {
-      "5.5": {
-        "total": 2,
-        "orders": {
-          "user1": 2
-        }
-      }
-
-    }
-  }
-}
-
-
-
 export const INR_BALANCES: INRBalances = {
   "user1": {
     balance: 100,

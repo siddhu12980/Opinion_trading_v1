@@ -8,13 +8,6 @@ export interface INRBalances {
   [key: string]: UserBalance;
 }
 
-export interface StockPool {
-  [userId: string]: {
-    [stockSymbol: string]: number;
-  };
-}
-
-
 export interface Order {
   total: number;
   orders: {

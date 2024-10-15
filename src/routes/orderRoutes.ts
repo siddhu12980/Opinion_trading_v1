@@ -1,14 +1,14 @@
 import express from "express";
-import { getOrderbookBuy, getOrderbookSell } from "../controller/getOrderBook";
+import { getOrderbookBuy } from "../controller/getOrderBook";
 import { selOrder } from "../controller/sellController";
-import { buyorder } from "../controller/buyController";
+import { buyNoorder, buyYesorder } from "../controller/buyController";
 
 const router = express.Router();
 
 router.post("/sell", selOrder);
-router.post("/buy", buyorder);
+router.post("/buy/no", buyNoorder);
+router.post("/buy/yes", buyYesorder);
 
-router.get("/orderbook/buy/:stockSymbol", getOrderbookBuy);
-router.get("/orderbook/sell/:stockSymbol", getOrderbookSell);
+router.get("/orderbook/:stockSymbol", getOrderbookBuy);
 
 export default router;
