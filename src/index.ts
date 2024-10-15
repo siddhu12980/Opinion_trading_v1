@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import routes from "./routes";
 import { errorHandler } from "./middelware/errorHandling";
 
@@ -6,6 +6,13 @@ const app = express();
 const port = 3000;
 
 app.use(express.json());
+
+app.get("/", (req: Request, res: Response) => {
+  res.json({
+    "message": "healthy"
+  })
+})
+
 
 app.use("/api/v1", routes);
 

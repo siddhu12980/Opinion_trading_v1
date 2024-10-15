@@ -1,16 +1,16 @@
-import { Request,Response,NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import { ORDERBOOK } from "../constants/const";
 
 export const createSymbol = (req: Request, res: Response, next: NextFunction) => {
-  try{
+  try {
     const stockSymbol = req.params.stockSymbol;
 
     if (!stockSymbol) {
-       res.status(400).json({ message: "Stock symbol is required" });
+      res.status(400).json({ message: "Stock symbol is required" });
     }
 
     if (ORDERBOOK[stockSymbol]) {
-       res.status(409).json({
+      res.status(409).json({
         stock: ORDERBOOK[stockSymbol],
         message: "Stock Already Exists"
       });
@@ -23,7 +23,7 @@ export const createSymbol = (req: Request, res: Response, next: NextFunction) =>
 
     res.json({
       stock: ORDERBOOK[stockSymbol],
-      message: "Stock Created"
+      message: `Symbol ${stockSymbol} created`
     });
   } catch (error) {
     next(error);

@@ -2,19 +2,27 @@ import { Request, Response, NextFunction } from "express";
 import { INR_BALANCES, ORDERBOOK } from "../constants/const";
 import { matchOrders, updateUserBalance } from "../helper/helper";
 
-export const buyNoorder = async (req: Request, res: Response, next: NextFunction) => {
+export const buyOrder = (req: Request, res: Response) => {
+  const { userId, stockSymbol, quantity, price, stockType } = req.body;
+
+  console.log("checking")
+  console.log(req.body)
+  if (!userId || !stockSymbol || !quantity || !price || !stockType) {
+    res.status(400).json({ message: "Missing required parameters" });
+  }
+
+  if (stockType == 'yes') {
+    buyYesorder(userId, stockSymbol, quantity, price, res);
+  } else if (stockType == 'no') {
+    buyNoorder(userId, stockSymbol, quantity, price, res)
+  }
+}
+
+const buyNoorder = async (userId: string, stockSymbol: string, quantity: number, price: number, res: Response) => {
+
   try {
     let orderList;
-
-    const { userId, stockSymbol, quantity, price, stockType = "no" }: {
-      userId: string,
-      stockSymbol: string,
-      quantity: number,
-      price: number,
-      stockType: "no"
-    } = req.body;
-
-    if (!userId || !stockSymbol || !quantity || !price || !stockType) {
+    if (!userId || !stockSymbol || !quantity || !price) {
       res.status(400).json({ message: "Missing required parameters" });
     }
 
@@ -27,7 +35,7 @@ export const buyNoorder = async (req: Request, res: Response, next: NextFunction
       ORDERBOOK[stockSymbol] = { yes: {}, no: {} };
     }
 
-    const ordersPriceCheck = ORDERBOOK[stockSymbol][stockType];
+    const ordersPriceCheck = ORDERBOOK[stockSymbol]["no"];
     const reverseOrdersCheck = ORDERBOOK[stockSymbol]["yes"];
 
     if (!ordersPriceCheck[price]) {
@@ -84,19 +92,11 @@ export const buyNoorder = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-export const buyYesorder = async (req: Request, res: Response, next: NextFunction) => {
+const buyYesorder = async (userId: string, stockSymbol: string, quantity: number, price: number, res: Response) => {
+
   try {
     let orderList;
-
-    const { userId, stockSymbol, quantity, price, stockType = "yes" }: {
-      userId: string,
-      stockSymbol: string,
-      quantity: number,
-      price: number,
-      stockType: "yes"
-    } = req.body;
-
-    if (!userId || !stockSymbol || !quantity || !price || !stockType) {
+    if (!userId || !stockSymbol || !quantity || !price) {
       res.status(400).json({ message: "Missing required parameters" });
     }
 
@@ -109,7 +109,7 @@ export const buyYesorder = async (req: Request, res: Response, next: NextFunctio
       ORDERBOOK[stockSymbol] = { yes: {}, no: {} };
     }
 
-    const ordersPriceCheck = ORDERBOOK[stockSymbol][stockType];
+    const ordersPriceCheck = ORDERBOOK[stockSymbol]["yes"];
     const reverseOrdersCheck = ORDERBOOK[stockSymbol]["no"];
 
     if (!ordersPriceCheck[price]) {

@@ -1,6 +1,7 @@
 import { INRBalances, OrderBook, StockBalances } from "../interface/interface";
 
-export const ORDERBOOK: OrderBook = {
+
+export const OrderDefaultvalues = {
   "BTC_USDT_10_Oct_2024_9_30": {
     "yes": {
       "9.5": {
@@ -25,7 +26,7 @@ export const ORDERBOOK: OrderBook = {
   }
 }
 
-export const INR_BALANCES: INRBalances = {
+export const INRDefaultValues = {
   "user1": {
     balance: 100,
     locked: 0
@@ -34,8 +35,9 @@ export const INR_BALANCES: INRBalances = {
     "balance": 400,
     locked: 200
   }
-};
-export const STOCK_BALANCES: StockBalances = {
+}
+
+export const StockDefaultValues = {
   user1: {
     "BTC_USDT_10_Oct_2024_9_30": {
       "yes": {
@@ -70,5 +72,9 @@ export const STOCK_BALANCES: StockBalances = {
     }
   }
 }
+
+export const ORDERBOOK: OrderBook = OrderDefaultvalues
+export const INR_BALANCES: INRBalances = INRDefaultValues
+export const STOCK_BALANCES: StockBalances = StockDefaultValues
 
 
