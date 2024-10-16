@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { INR_BALANCES, ORDERBOOK } from "../constants/const";
+import { INR_BALANCES, ORDERBOOK, STOCK_BALANCES } from "../constants/const";
 import { matchOrders, updateUserBalance } from "../helper/helper";
 
 export const buyOrder = (req: Request, res: Response) => {
@@ -51,27 +51,45 @@ const buyNoorder = async (userId: string, stockSymbol: string, quantity: number,
     if (!ordersPriceCheck[price]) {
       reverseOrdersCheck[10 - price].total += quantity;
 
-      orderList[userId] = (orderList[userId] || 0) + quantity
 
+      if (!orderList[userId]) {
+        orderList[userId] = {
+          inverse: 0,
+          normal: 0
+        }
+      }
+
+      orderList[userId].inverse = (orderList[userId].inverse || 0) + quantity
 
       updateUserBalance(userBalance, quantity, price);
 
     } else {
-      const remainingQuantity = matchOrders(orderList, quantity);
+      const remainingQuantity = matchOrders(orderList, quantity, userId, stockSymbol, "no", price);
+
+      if (remainingQuantity == -1) {
+        throw Error("error while matching Orders")
+      }
       ordersPriceCheck[price].total -= (quantity - remainingQuantity)
 
       if (ordersPriceCheck[price].total == 0) {
         delete ordersPriceCheck[price]
       }
+
       if (remainingQuantity > 0) {
         if (!reverseOrdersCheck[10 - price]) {
           reverseOrdersCheck[10 - price] = { total: 0, orders: {} };
         }
         orderList = reverseOrdersCheck[10 - price].orders;
 
-        orderList[userId] = (orderList[userId] || 0) + remainingQuantity
-        reverseOrdersCheck[10 - price].total += remainingQuantity
+        if (!orderList[userId]) {
+          orderList[userId] = {
+            inverse: 0,
+            normal: 0
+          }
+        }
+        orderList[userId].inverse = (orderList[userId].inverse || 0) + remainingQuantity
 
+        reverseOrdersCheck[10 - price].total += remainingQuantity
 
         userBalance.balance -= ((quantity - remainingQuantity) * price)
         userBalance.locked += remainingQuantity * price
@@ -85,6 +103,7 @@ const buyNoorder = async (userId: string, stockSymbol: string, quantity: number,
       message: "Order placed successfully",
       orders: ORDERBOOK[stockSymbol],
       updatedBalance: userBalance,
+      updatedStock: STOCK_BALANCES[userId][stockSymbol]
     });
   } catch (error: any) {
     console.error("Error placing the order:", error);
@@ -125,13 +144,19 @@ const buyYesorder = async (userId: string, stockSymbol: string, quantity: number
     if (!ordersPriceCheck[price]) {
       reverseOrdersCheck[10 - price].total += quantity;
 
-      orderList[userId] = (orderList[userId] || 0) + quantity
+      if (!orderList[userId]) {
+        orderList[userId] = {
+          inverse: 0,
+          normal: 0
+        }
+      }
+      orderList[userId].inverse = (orderList[userId].inverse || 0) + quantity
 
 
       updateUserBalance(userBalance, quantity, price);
 
     } else {
-      const remainingQuantity = matchOrders(orderList, quantity);
+      const remainingQuantity = matchOrders(orderList, quantity, userId, stockSymbol, "yes", price);
       ordersPriceCheck[price].total -= (quantity - remainingQuantity)
 
       if (ordersPriceCheck[price].total == 0) {
@@ -143,7 +168,14 @@ const buyYesorder = async (userId: string, stockSymbol: string, quantity: number
         }
         orderList = reverseOrdersCheck[10 - price].orders;
 
-        orderList[userId] = (orderList[userId] || 0) + remainingQuantity
+
+        if (!orderList[userId]) {
+          orderList[userId] = {
+            inverse: 0,
+            normal: 0
+          }
+        }
+        orderList[userId].inverse = (orderList[userId].inverse || 0) + remainingQuantity
         reverseOrdersCheck[10 - price].total += remainingQuantity
 
 
@@ -161,6 +193,7 @@ const buyYesorder = async (userId: string, stockSymbol: string, quantity: number
       message: "Order placed successfully",
       orders: ORDERBOOK[stockSymbol],
       updatedBalance: userBalance,
+      updatedStock: STOCK_BALANCES[userId][stockSymbol]
     });
   } catch (error: any) {
     console.error("Error placing the order:", error);

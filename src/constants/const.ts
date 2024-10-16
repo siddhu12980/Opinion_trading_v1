@@ -1,73 +1,70 @@
-import { INRBalances, OrderBook, StockBalances } from "../interface/interface";
+import { INRBalances, OrderBook, orderTypes, StockBalances } from "../interface/interface";
 
-
-export const OrderDefaultvalues = {
+const OrderDefaultvalues: OrderBook = {
   "BTC_USDT_10_Oct_2024_9_30": {
-    "yes": {
+    yes: {
       "9.5": {
-        "total": 12,
+        total: 12,
         orders: {
-          "user1": 2,
-          "user2": 10
-        }
+          "user1": {
+            [orderTypes.inverse]: 3,   // Direct balance for inverse order type
+            [orderTypes.normal]: 3,    // Direct balance for normal order type
+          },
+          "user2": {
+            [orderTypes.inverse]: 3,
+            [orderTypes.normal]: 3,
+          },
+        },
       },
       "8.5": {
-        "total": 12,
-        "orders": {
-          "user1": 3,
-          "user2": 3,
-          "user3": 6
-        }
+        total: 8,
+        orders: {
+          "user1": {
+            [orderTypes.inverse]: 0,
+            [orderTypes.normal]: 2,
+          },
+          "user3": {
+            [orderTypes.inverse]: 0,
+            [orderTypes.normal]: 6,
+          },
+        },
       },
     },
-    "no": {
-
-    }
+    no: {},
   }
-}
-
+};
 export const INRDefaultValues = {
   "user1": {
     balance: 100,
     locked: 0
   },
   "user2": {
-    "balance": 400,
-    locked: 200
+    "balance": 200,
+    locked: 100
   }
 }
-
 export const StockDefaultValues = {
   user1: {
     "BTC_USDT_10_Oct_2024_9_30": {
       "yes": {
-        "quantity": 10,
+        "quantity": 5,
         "locked": 5
       },
       "no": {
         "quantity": 10,
-        locked: 0
-
-      }
-    },
-    "btc": {
-      "no": {
-        "quantity": 20,
-        "locked": 5
+        "locked": 0
       }
     }
   },
   user2: {
     "BTC_USDT_10_Oct_2024_9_30": {
+      "yes": {
+        "quantity": 0,
+        "locked": 0
+      },
       "no": {
         "quantity": 3,
         "locked": 4
-      }
-    },
-    "btc": {
-      "yes": {
-        "quantity": 10,
-        "locked": 1
       }
     }
   }

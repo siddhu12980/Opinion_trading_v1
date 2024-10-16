@@ -2,6 +2,7 @@ import express, { Request, Response, NextFunction } from "express"
 import { ORDERBOOK, STOCK_BALANCES } from "../constants/const";
 import { Stock } from "../interface/interface";
 
+
 export const selOrder = (req: Request, res: Response, next: NextFunction) => {
   try {
     const { userId, stockSymbol, quantity, price, stockType }: {
@@ -47,9 +48,12 @@ export const selOrder = (req: Request, res: Response, next: NextFunction) => {
 
     const orderList = ordersPriceCheck[price].orders;
     if (!orderList[userId]) {
-      orderList[userId] = quantity;
+      orderList[userId] = {
+        "normal": quantity,
+        "inverse": 0
+      }
     } else {
-      orderList[userId] += quantity;
+      orderList[userId].normal += quantity;
     }
 
     ordersPriceCheck[price].total += quantity;

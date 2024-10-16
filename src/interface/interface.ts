@@ -8,15 +8,22 @@ export interface INRBalances {
   [key: string]: UserBalance;
 }
 
+export enum orderTypes {
+  normal = "normal",
+  inverse = "inverse"
+}
+
 export interface Order {
   total: number;
   orders: {
-    [userId: string]: number;
+    [userId: string]: {
+      [key in orderTypes]: number; // Each orderType maps directly to a balance number
+    }
   };
 }
 
 export interface Outcome {
-  [price: string]: Order;
+  [price: string]: Order; // Price points mapped to Order objects
 }
 
 export interface OrderBookEntry {
@@ -25,9 +32,8 @@ export interface OrderBookEntry {
 }
 
 export interface OrderBook {
-  [contract: string]: OrderBookEntry;
+  [contract: string]: OrderBookEntry; // Contracts mapped to OrderBookEntry
 }
-
 
 export interface Stock {
   quantity: number;
