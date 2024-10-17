@@ -5,7 +5,6 @@ import { matchOrders, updateUserBalance } from "../helper/helper";
 export const buyOrder = (req: Request, res: Response) => {
   const { userId, stockSymbol, quantity, price, stockType } = req.body;
 
-  console.log("checking")
   console.log(req.body)
   if (!userId || !stockSymbol || !quantity || !price || !stockType) {
     res.status(400).json({ message: "Missing required parameters" });
@@ -18,7 +17,7 @@ export const buyOrder = (req: Request, res: Response) => {
   }
 }
 
-const buyNoorder = async (userId: string, stockSymbol: string, quantity: number, price: number, res: Response) => {
+const buyNoorder = (userId: string, stockSymbol: string, quantity: number, price: number, res: Response) => {
 
   try {
     let orderList;
@@ -91,12 +90,11 @@ const buyNoorder = async (userId: string, stockSymbol: string, quantity: number,
 
         reverseOrdersCheck[10 - price].total += remainingQuantity
 
-        userBalance.balance -= ((quantity - remainingQuantity) * price)
+        userBalance.balance -= remainingQuantity * price
         userBalance.locked += remainingQuantity * price
 
       } else {
-        const amount = quantity * price;
-        userBalance.balance -= amount;
+        console.log("TXN COmplete")
       }
     }
     res.json({
@@ -111,7 +109,7 @@ const buyNoorder = async (userId: string, stockSymbol: string, quantity: number,
   }
 };
 
-const buyYesorder = async (userId: string, stockSymbol: string, quantity: number, price: number, res: Response) => {
+const buyYesorder = (userId: string, stockSymbol: string, quantity: number, price: number, res: Response) => {
 
   try {
     let orderList;
@@ -179,12 +177,11 @@ const buyYesorder = async (userId: string, stockSymbol: string, quantity: number
         reverseOrdersCheck[10 - price].total += remainingQuantity
 
 
-        userBalance.balance -= ((quantity - remainingQuantity) * price)
+        userBalance.balance -= remainingQuantity * price
         userBalance.locked += remainingQuantity * price
 
       } else {
-        const amount = quantity * price;
-        userBalance.balance -= amount;
+        console.log("TXN COmplete")
       }
 
     }

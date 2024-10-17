@@ -13,6 +13,7 @@ export const onrampINR = (req: Request, res: Response, next: NextFunction) => {
     if (!user) {
       res.status(404).json({ message: "User not found" });
     }
+
     user.balance += amount;
     res.json({ user, message: `Onramped ${userId} with amount ${amount} ` });
   } catch (error) {
