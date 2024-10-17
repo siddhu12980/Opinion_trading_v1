@@ -1,9 +1,13 @@
 import express, { Request, Response, NextFunction } from "express"
 import { ORDERBOOK, STOCK_BALANCES } from "../constants/const";
 import { Stock } from "../interface/interface";
+import { reconnectWs, socket } from "../ws/wsConnectExpress";
 
 
 export const selOrder = (req: Request, res: Response, next: NextFunction) => {
+  if (!socket) {
+    reconnectWs("ws://localhost:8080")
+  }
   try {
     const { userId, stockSymbol, quantity, price, stockType }: {
       userId: string,
@@ -61,6 +65,8 @@ export const selOrder = (req: Request, res: Response, next: NextFunction) => {
     const user_balance = user_stock_balance[stockSymbol][stockType]! as Stock;
     user_balance.quantity -= quantity;
     user_balance.locked += quantity;
+
+    socket?.send(JSON.stringify(ORDERBOOK[stockSymbol]))
 
     res.json({
       message: `Market sell ${stockType} Order placed successfully`,

@@ -1,9 +1,14 @@
 import { Request, Response, NextFunction } from "express";
 import { INR_BALANCES, ORDERBOOK, STOCK_BALANCES } from "../constants/const";
 import { matchOrders, updateUserBalance } from "../helper/helper";
+import { reconnectWs, socket } from "../ws/wsConnectExpress";
 
 export const buyOrder = (req: Request, res: Response) => {
   const { userId, stockSymbol, quantity, price, stockType } = req.body;
+
+  if (!socket) {
+    reconnectWs("ws://localhost:8080")
+  }
 
   console.log(req.body)
   if (!userId || !stockSymbol || !quantity || !price || !stockType) {
@@ -18,6 +23,11 @@ export const buyOrder = (req: Request, res: Response) => {
 }
 
 const buyNoorder = (userId: string, stockSymbol: string, quantity: number, price: number, res: Response) => {
+
+  if (!socket) {
+    reconnectWs("ws://localhost:8080")
+  }
+
 
   try {
     let orderList;
@@ -97,6 +107,10 @@ const buyNoorder = (userId: string, stockSymbol: string, quantity: number, price
         console.log("TXN COmplete")
       }
     }
+
+
+    socket?.send(JSON.stringify(ORDERBOOK[stockSymbol]))
+
     res.json({
       message: "Order placed successfully",
       orders: ORDERBOOK[stockSymbol],
@@ -110,6 +124,11 @@ const buyNoorder = (userId: string, stockSymbol: string, quantity: number, price
 };
 
 const buyYesorder = (userId: string, stockSymbol: string, quantity: number, price: number, res: Response) => {
+
+  if (!socket) {
+    reconnectWs("ws://localhost:8080")
+  }
+
 
   try {
     let orderList;
@@ -185,6 +204,10 @@ const buyYesorder = (userId: string, stockSymbol: string, quantity: number, pric
       }
 
     }
+
+
+    socket?.send(JSON.stringify(ORDERBOOK[stockSymbol]))
+
 
     res.json({
       message: "Order placed successfully",
