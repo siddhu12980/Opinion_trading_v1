@@ -3,9 +3,15 @@ import express, { Request, Response, NextFunction } from "express"
 import { v4 as uuidv4 } from 'uuid';
 import { reconnectRedis, redisClient } from "../PubSubManager";
 import { reqTypes } from "../constants/const";
+import { redisPubSubManager } from "../PubSubManager/managet";
 
 export const selOrder = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const subclient = redisPubSubManager
+    await redisPubSubManager.ensureRedisConnection()
+
+
+
     if (!redisClient?.isOpen) {
       reconnectRedis()
     }
@@ -34,9 +40,13 @@ export const selOrder = async (req: Request, res: Response, next: NextFunction) 
 
     await redisClient?.lPush("req", queueMessage);
 
-    // const result = doSellOrder(userId, stockSymbol, quantity, price, stockType);
-    //
-    res.json(queueMessage);
+
+    await subclient.listenForMessages(id, (message) => {
+      res.json(
+        message
+      )
+    })
+
 
   } catch (error) {
     next(error);

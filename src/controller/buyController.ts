@@ -2,12 +2,12 @@ import { Request, Response, NextFunction } from "express";
 import { v4 as uuidv4 } from 'uuid';
 import { reconnectRedis, redisClient } from "../PubSubManager";
 import { reqTypes } from "../constants/const";
+import { redisPubSubManager } from "../PubSubManager/managet";
 
 
 export const buyOrder = (req: Request, res: Response) => {
   const { userId, stockSymbol, quantity, price, stockType } = req.body;
 
-  console.log(req.body)
   if (!userId || !stockSymbol || !quantity || !price || !stockType) {
     res.status(400).json({ message: "Missing required parameters" });
   }
@@ -23,29 +23,35 @@ export const buyOrder = (req: Request, res: Response) => {
 
 const buyYesorder = async (userId: string, stockSymbol: string, quantity: number, price: number, res: Response) => {
   try {
+    const subclient = redisPubSubManager
+    await redisPubSubManager.ensureRedisConnection()
+
+
     if (!redisClient?.isOpen) {
       await reconnectRedis()
     }
     if (!userId || !stockSymbol || !quantity || !price) {
       res.status(400).json({ message: "Missing required parameters" });
     }
+
+    const id = uuidv4();
+
     const message = {
       message: "Order placed successfully",
-      "req": reqTypes.buyYesorder,
-      userId,
+      "req": reqTypes.buyYesorder, userId,
       stockSymbol,
       quantity,
       price,
+      id
     }
 
-    //do yes
     redisClient?.lPush("req", JSON.stringify(message))
 
-
-    res.status(200).json({
-      message
+    await subclient.listenForMessages(id, (message) => {
+      res.json(
+        message
+      )
     })
-
   } catch (error: any) {
     console.error("Error placing the order:", error);
     res.status(500).json({ message: "An error occurred while placing the order", error: error.message });
@@ -56,6 +62,10 @@ const buyYesorder = async (userId: string, stockSymbol: string, quantity: number
 
 const buyNoorder = async (userId: string, stockSymbol: string, quantity: number, price: number, res: Response) => {
   try {
+    const subclient = redisPubSubManager
+    await redisPubSubManager.ensureRedisConnection()
+
+
     if (!redisClient?.isOpen) {
       await reconnectRedis()
     }
@@ -75,13 +85,15 @@ const buyNoorder = async (userId: string, stockSymbol: string, quantity: number,
       message: "Buy Order Queue successfully",
     }
 
-    //do buyNoorder
 
     redisClient?.lPush("req", JSON.stringify(message))
 
-    res.status(200).json({
-      "message": "Buy no Order in Queue"
+    await subclient.listenForMessages(id, (message) => {
+      res.json(
+        message
+      )
     })
+
   } catch (error: any) {
     console.error("Error placing the order:", error);
     res.status(500).json({ message: "An error occurred while placing the order", error: error.message });

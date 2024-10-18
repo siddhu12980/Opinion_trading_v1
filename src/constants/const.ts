@@ -17,6 +17,7 @@ export enum reqTypes {
   "getallStockBalance",
   "createSymbol",
   "getOrderbook",
+  "getAllOrderbook",
   "mintStock",
   "onrampINR",
   "reset",

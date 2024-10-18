@@ -21,6 +21,8 @@ export function doReset() {
     STOCK_BALANCES,
     INR_BALANCES,
   };
+
+  return message
 }
 
 

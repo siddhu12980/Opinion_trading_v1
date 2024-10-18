@@ -2,9 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import { v4 as uuidv4 } from 'uuid';
 import { reconnectRedis, redisClient } from "../PubSubManager";
 import { reqTypes } from "../constants/const";
+import { redisPubSubManager } from "../PubSubManager/managet";
 
 
 export const createUser = async (req: Request, res: Response, next: NextFunction) => {
+
+  const subclient = redisPubSubManager
+  await redisPubSubManager.ensureRedisConnection()
+
   try {
     if (!redisClient?.isOpen) {
       await reconnectRedis()
@@ -24,8 +29,11 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
 
     await redisClient?.lPush("req", data)
 
-    res.json({ message: `User ${user} created `, data });
-
+    await subclient.listenForMessages(id, (message) => {
+      res.json(
+        message
+      )
+    })
   } catch (error) {
     next(error);
   }

@@ -1,26 +1,19 @@
-import { WebSocket } from "ws";
-import { reconnectWs, socket } from "../../ws/wsConnectExpress";
-import { INR_BALANCES, ORDERBOOK } from "../../constants/const";
+import { INR_BALANCES, ORDERBOOK, STOCK_BALANCES } from "../../constants/const";
 import { broadcastOrderBookUpdate } from "../../ws";
 import { matchOrders, updateUserBalance } from "../../helper/helper";
 
-export function doBuyNoOrder(userId: string, stockSymbol: string, quantity: number, price: number) {
+export async function doBuyNoOrder(userId: string, stockSymbol: string, quantity: number, price: number) {
   try {
-    if (!socket) {
-      reconnectWs("ws://localhost:8080")
-    }
     let orderList;
-
+    let msg;
     const userBalance = INR_BALANCES[userId];
 
     if (!userBalance || userBalance.balance < quantity * price) {
-      throw Error("Insufficent Funds to place Order")
+      throw Error("INsifficent Funds")
     }
-
     if (!ORDERBOOK[stockSymbol]) {
       ORDERBOOK[stockSymbol] = { yes: {}, no: {} };
     }
-
     const ordersPriceCheck = ORDERBOOK[stockSymbol]["no"];
     const reverseOrdersCheck = ORDERBOOK[stockSymbol]["yes"];
 
@@ -32,22 +25,23 @@ export function doBuyNoOrder(userId: string, stockSymbol: string, quantity: numb
     } else {
       orderList = ordersPriceCheck[price].orders;
     }
-
-
     if (!ordersPriceCheck[price]) {
       reverseOrdersCheck[10 - price].total += quantity;
-
-
       if (!orderList[userId]) {
         orderList[userId] = {
           inverse: 0,
           normal: 0
         }
       }
-
       orderList[userId].inverse = (orderList[userId].inverse || 0) + quantity
-
       updateUserBalance(userBalance, quantity, price);
+
+      msg = {
+
+        orderBook: ORDERBOOK[stockSymbol],
+        stockBook: STOCK_BALANCES[userId],
+        "message": "Txn INverted "
+      }
 
     } else {
       const remainingQuantity = matchOrders(orderList, quantity, userId, stockSymbol, "no", price);
@@ -80,27 +74,38 @@ export function doBuyNoOrder(userId: string, stockSymbol: string, quantity: numb
         userBalance.balance -= remainingQuantity * price
         userBalance.locked += remainingQuantity * price
 
+        msg = {
+
+          orderBook: ORDERBOOK[stockSymbol],
+          stockBook: STOCK_BALANCES[userId],
+          "message": " TXN COmplete reverted"
+        }
+
       } else {
-        console.log("TXN COmplete")
+        msg = {
+
+          orderBook: ORDERBOOK[stockSymbol],
+          stockBook: STOCK_BALANCES[userId],
+          "message": " TXN COmplete"
+        }
       }
     }
+    broadcastOrderBookUpdate(stockSymbol, ORDERBOOK[stockSymbol])
 
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      broadcastOrderBookUpdate(stockSymbol, ORDERBOOK[stockSymbol])
+    return msg
+  } catch (err: any) {
+
+    return {
+      "message": "Error whole placing order",
+      "error": err.message
     }
-  } catch (error: any) {
-    console.error("Error placing the order:", error);
   }
-
-
 }
+
 export async function doBuyYesOrder(userId: string, stockSymbol: string, quantity: number, price: number) {
   try {
-    if (!socket) {
-      reconnectWs("ws://localhost:8080")
-    }
 
-
+    let msg;
     let orderList;
     if (!userId || !stockSymbol || !quantity || !price) {
       throw Error("parameters not available")
@@ -108,6 +113,7 @@ export async function doBuyYesOrder(userId: string, stockSymbol: string, quantit
 
     const userBalance = INR_BALANCES[userId];
     if (!userBalance || userBalance.balance < quantity * price) {
+
       throw Error("INsifficent Funds")
     }
 
@@ -141,6 +147,14 @@ export async function doBuyYesOrder(userId: string, stockSymbol: string, quantit
 
       updateUserBalance(userBalance, quantity, price);
 
+      msg = {
+
+        orderBook: ORDERBOOK[stockSymbol],
+        stockBook: STOCK_BALANCES[userId],
+        "message": "TXN INVERTED"
+
+      }
+
     } else {
       const remainingQuantity = matchOrders(orderList, quantity, userId, stockSymbol, "yes", price);
       ordersPriceCheck[price].total -= (quantity - remainingQuantity)
@@ -166,21 +180,39 @@ export async function doBuyYesOrder(userId: string, stockSymbol: string, quantit
 
 
         userBalance.balance -= remainingQuantity * price
-        userBalance.locked += remainingQuantity * price
+
+
+        msg = {
+
+          orderBook: ORDERBOOK[stockSymbol],
+          stockBook: STOCK_BALANCES[userId],
+          "message": " TXN COmplete partial revert"
+        }
 
       } else {
-        console.log("TXN COmplete")
+        userBalance.locked += remainingQuantity * price
+
+        msg = {
+
+          orderBook: ORDERBOOK[stockSymbol],
+          stockBook: STOCK_BALANCES[userId],
+          "message": "Txn COmplete",
+        }
+
       }
 
     }
 
-    if (socket && socket.readyState === WebSocket.OPEN) {
-      broadcastOrderBookUpdate(stockSymbol, ORDERBOOK[stockSymbol])
+    broadcastOrderBookUpdate(stockSymbol, ORDERBOOK[stockSymbol])
+
+    return msg
+
+  } catch (err: any) {
+
+    return {
+      "message": "Error whole placing order",
+      "error": err.message
     }
-
-
-  } catch (error: any) {
-    console.error("Error placing the order:", error);
   }
 
 }

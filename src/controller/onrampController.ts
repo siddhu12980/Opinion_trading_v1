@@ -2,9 +2,15 @@ import { Request, Response, NextFunction } from "express";
 import { v4 as uuidv4 } from 'uuid';
 import { reconnectRedis, redisClient } from "../PubSubManager";
 import { reqTypes } from "../constants/const";
+import { redisPubSubManager } from "../PubSubManager/managet";
 
 export async function onrampINR(req: Request, res: Response, next: NextFunction) {
   try {
+    await redisPubSubManager.ensureRedisConnection()
+    const subclient = redisPubSubManager
+
+
+
     if (!redisClient?.isOpen) {
       await reconnectRedis()
     }
@@ -22,10 +28,13 @@ export async function onrampINR(req: Request, res: Response, next: NextFunction)
 
     await redisClient?.lPush("req", JSON.stringify(queueMessage));
 
-    res.status(202).json({
-      message: `Onramp request for ${userId} with amount ${amount} has been queued`,
-      id
-    });
+    await subclient.listenForMessages(id, (message) => {
+      res.json(
+        message
+      )
+    })
+
+
   } catch (error) {
     next(error);
   }

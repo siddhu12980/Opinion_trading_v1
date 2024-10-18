@@ -2,9 +2,15 @@ import { Response, Request, NextFunction } from "express"
 import { v4 as uuidv4 } from 'uuid';
 import { reconnectRedis, redisClient } from '../PubSubManager';
 import { reqTypes } from "../constants/const";
+import { redisPubSubManager } from "../PubSubManager/managet";
 
 export const mintStock = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const subclient = redisPubSubManager
+    await redisPubSubManager.ensureRedisConnection()
+
+
+
     const { userId, quantity, price } = req.body;
     const stockSymbol = req.params.stockSymbol;
 
@@ -29,10 +35,12 @@ export const mintStock = async (req: Request, res: Response, next: NextFunction)
 
     await redisClient?.lPush("req", data);
 
-    res.status(202).json({
-      message: `Mint stock request for ${stockSymbol} by user ${userId} has been queued`,
-      id
-    });
+
+    await subclient.listenForMessages(id, (message) => {
+      res.json(
+        message
+      )
+    })
   } catch (error) {
     next(error);
   }

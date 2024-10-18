@@ -2,9 +2,14 @@ import { Request, Response, NextFunction } from "express";
 import { reconnectRedis, redisClient } from '../PubSubManager';
 import { v4 as uuidv4 } from 'uuid';
 import { reqTypes } from "../constants/const";
+import { redisPubSubManager } from "../PubSubManager/managet";
 
 export const createSymbol = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const subclient = redisPubSubManager
+    await redisPubSubManager.ensureRedisConnection()
+
+
     const stockSymbol = req.params.stockSymbol;
 
     if (!redisClient?.isOpen) {
@@ -25,10 +30,12 @@ export const createSymbol = async (req: Request, res: Response, next: NextFuncti
 
     await redisClient?.lPush("req", data);
 
+    await subclient.listenForMessages(id, (message) => {
+      res.json(
+        message
+      )
+    })
 
-    res.status(201).json({
-      message: `Symbol ${stockSymbol} created and request has been queued`
-    });
   } catch (error) {
     next(error);
   }

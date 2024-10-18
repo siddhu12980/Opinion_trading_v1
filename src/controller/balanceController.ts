@@ -2,9 +2,13 @@ import express, { Request, Response, NextFunction } from "express";
 import { v4 as uuidv4 } from 'uuid';
 import { reconnectRedis, redisClient } from '../PubSubManager';
 import { reqTypes } from "../constants/const";
+import { redisPubSubManager } from "../PubSubManager/managet";
 
 export const getINRBalance = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const subclient = redisPubSubManager
+    await redisPubSubManager.ensureRedisConnection()
+
     const userId = req.params.userId;
 
     if (!userId) {
@@ -25,10 +29,14 @@ export const getINRBalance = async (req: Request, res: Response, next: NextFunct
 
     await redisClient?.lPush("req", data);
 
-    res.status(202).json({
-      message: `INR balance request for user ${userId} has been queued`,
-      id
-    });
+
+    await subclient.listenForMessages(id, (message) => {
+      res.json(
+        message
+      )
+    })
+
+
   } catch (error) {
     next(error);
   }
@@ -36,6 +44,10 @@ export const getINRBalance = async (req: Request, res: Response, next: NextFunct
 
 export const getStockBalance = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const subclient = redisPubSubManager
+    await redisPubSubManager.ensureRedisConnection()
+
+
     const userId = req.params.userId;
 
     if (!userId) {
@@ -56,10 +68,14 @@ export const getStockBalance = async (req: Request, res: Response, next: NextFun
 
     await redisClient?.lPush("req", data);
 
-    res.status(202).json({
-      message: `Stock balance request for user ${userId} has been queued`,
-      id
-    });
+
+    await subclient.listenForMessages(id, (message) => {
+
+      res.json(
+        message
+      )
+    })
+
   } catch (error) {
     next(error);
   }
@@ -69,6 +85,10 @@ export const getStockBalance = async (req: Request, res: Response, next: NextFun
 
 export const getallINRBalance = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const subclient = redisPubSubManager
+    await redisPubSubManager.ensureRedisConnection()
+
+
     if (!redisClient?.isOpen) {
       await reconnectRedis();
     }
@@ -81,10 +101,16 @@ export const getallINRBalance = async (req: Request, res: Response, next: NextFu
 
 
     await redisClient?.lPush("req", data);
-    res.status(202).json({
-      message: "INR balance request has been queued",
-      id
-    });
+
+
+    await subclient.listenForMessages(id, (message) => {
+
+      res.json(
+        message
+      )
+    })
+
+
   } catch (error) {
     next(error);
   }
@@ -92,6 +118,10 @@ export const getallINRBalance = async (req: Request, res: Response, next: NextFu
 
 export const getallStockBalance = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const subclient = redisPubSubManager
+    await redisPubSubManager.ensureRedisConnection()
+
+
     if (!redisClient?.isOpen) {
       await reconnectRedis();
     }
@@ -101,10 +131,15 @@ export const getallStockBalance = async (req: Request, res: Response, next: Next
       id,
     });
     await redisClient?.lPush("req", data);
-    res.status(202).json({
-      message: "Stock balance request has been queued",
-      id
-    });
+
+
+    await subclient.listenForMessages(id, (message) => {
+      res.json(
+        message
+      )
+    })
+
+
   } catch (error) {
     next(error);
   }

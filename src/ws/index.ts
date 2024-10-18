@@ -1,6 +1,5 @@
 
 import { WebSocketServer, WebSocket } from 'ws';
-
 const subscriptions: Map<string, Set<WebSocket>> = new Map();
 
 export function startWebSocketServer(port: number) {
@@ -9,36 +8,32 @@ export function startWebSocketServer(port: number) {
   });
 
   wss.on('connection', (ws: WebSocket) => {
+
     ws.on('message', (message: string) => {
-
       const data = JSON.parse(message);
+      const stockSymbol = data.stockSymbol;
 
-      if (!data) {
-        console.log(data)
-        throw Error("Data not Available")
-      }
-      console.log("data", data)
-      const userId = data.userId
-      const stockSymbol = data.stockSymbol
-
-
+      // Add the client (WebSocket) to the subscription list for this stockSymbol
       if (!subscriptions.has(stockSymbol)) {
         subscriptions.set(stockSymbol, new Set());
       }
-      subscriptions.get(stockSymbol)?.add(ws);
 
-      console.log(`User ${userId} subscribed to ${stockSymbol}`);
+      const stockSet = subscriptions.get(stockSymbol);
+      console.log(`Before adding: ${stockSymbol} has ${stockSet?.size || 0} clients`);
 
+      stockSet?.add(ws);
+
+      console.log(`After adding: ${stockSymbol} has ${stockSet?.size || 0} clients`);
     });
 
     ws.on('close', () => {
+      console.log('WebSocket connection closed for client');
       subscriptions.forEach((clients, stockSymbol) => {
         clients.delete(ws);
         if (clients.size === 0) {
           subscriptions.delete(stockSymbol);
         }
       });
-      console.log('WebSocket connection closed');
     });
 
     ws.on('error', (error) => {
@@ -47,11 +42,20 @@ export function startWebSocketServer(port: number) {
   });
 }
 
+
 export function broadcastOrderBookUpdate(stockSymbol: string, update: any) {
+  console.log("inside broadcast")
   const clients = subscriptions.get(stockSymbol);
+  console.log(`Broadcasting update to ${clients?.size || 0} clients for stock ${stockSymbol}`);
+
   if (clients) {
     clients.forEach((client) => {
-      client.send(JSON.stringify(update));
+      try {
+        console.log("Sending update to client:", update);
+        client.send(JSON.stringify(update));
+      } catch (error) {
+        console.error("Failed to send message to client:", error);
+      }
     });
   }
 }

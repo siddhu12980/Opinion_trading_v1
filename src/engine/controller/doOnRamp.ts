@@ -1,10 +1,12 @@
 import { INR_BALANCES } from "../../constants/const";
 
-export function processINROnramp(userId: string, amount: number) {
+export function doOnramp(userId: string, amount: number) {
   const user = INR_BALANCES[userId];
 
   if (!user) {
-    throw new Error("User not found");
+    return {
+      "message": "User Not found"
+    }
   }
   user.balance += amount;
 

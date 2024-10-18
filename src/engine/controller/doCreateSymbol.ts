@@ -7,9 +7,14 @@ export function doCreateSymbol(stockSymbol: string) {
       yes: {},
       no: {}
     };
-    return ORDERBOOK[stockSymbol];
+
+    return ORDERBOOK[stockSymbol]
+
   } else {
-    throw new Error("Stock Already Exists");
+    return {
+      orderBook: ORDERBOOK[stockSymbol],
+      "message": "Stock Already Exists",
+    }
   }
 }
 

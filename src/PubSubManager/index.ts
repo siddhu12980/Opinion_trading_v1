@@ -1,9 +1,7 @@
 import { createClient } from "redis"
 
 type RedisClient = ReturnType<typeof createClient>;
-
 let redisClient: RedisClient | null = null;
-
 export async function createConnectRedis(): Promise<void> {
   const client = await createClient();
 
@@ -24,3 +22,5 @@ export async function reconnectRedis(): Promise<void> {
   }
 }
 export { redisClient };
+
+
