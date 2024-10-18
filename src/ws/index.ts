@@ -1,29 +1,57 @@
 
-import express from 'express';
-import { WebSocketServer } from 'ws';
+import { WebSocketServer, WebSocket } from 'ws';
 
-export function startServer(port: number) {
-  let subscriptions: Map<string, string[]>;
-  const app = express();
-  const httpServer = app.listen(port, () => {
-    console.log(`Ws is listening on port ${port}`);
+const subscriptions: Map<string, Set<WebSocket>> = new Map();
+
+export function startWebSocketServer(port: number) {
+  const wss = new WebSocketServer({ port }, () => {
+    console.log(`WebSocket server is listening on port ${port}`);
   });
 
-  const wss = new WebSocketServer({ server: httpServer });
+  wss.on('connection', (ws: WebSocket) => {
+    ws.on('message', (message: string) => {
 
-  wss.on('connection', function connection(ws) {
-    ws.on('error', console.error);
+      const data = JSON.parse(message);
 
-    ws.on('message', function message(data, isBinary) {
-      wss.clients.forEach(function each(client) {
-        if (client.readyState === ws.OPEN) {
-          client.send(data, { binary: isBinary });
-        }
-      });
+      if (!data) {
+        console.log(data)
+        throw Error("Data not Available")
+      }
+      console.log("data", data)
+      const userId = data.userId
+      const stockSymbol = data.stockSymbol
+
+
+      if (!subscriptions.has(stockSymbol)) {
+        subscriptions.set(stockSymbol, new Set());
+      }
+      subscriptions.get(stockSymbol)?.add(ws);
+
+      console.log(`User ${userId} subscribed to ${stockSymbol}`);
+
     });
 
-    ws.on("close", () => console.log("ws closed"))
+    ws.on('close', () => {
+      subscriptions.forEach((clients, stockSymbol) => {
+        clients.delete(ws);
+        if (clients.size === 0) {
+          subscriptions.delete(stockSymbol);
+        }
+      });
+      console.log('WebSocket connection closed');
+    });
 
-    ws.send('Hello! Message From ws side!!');
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
   });
+}
+
+export function broadcastOrderBookUpdate(stockSymbol: string, update: any) {
+  const clients = subscriptions.get(stockSymbol);
+  if (clients) {
+    clients.forEach((client) => {
+      client.send(JSON.stringify(update));
+    });
+  }
 }

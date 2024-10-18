@@ -5,23 +5,34 @@ let socket: WebSocket | null = null;
 
 export async function connectWs(url: string) {
   try {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      console.log("Already connected to WebSocket");
+      return;
+    }
+
     socket = new WebSocket(url);
-    socket.onopen = () => {
+
+    socket.on("open", () => {
       console.log("WebSocket connection established");
-      if (socket) {
-        socket.send("Hello from Express server!");
+
+      let msg = {
+        message: (`Hello from express`)
       }
-    };
-    socket.onmessage = (message) => {
-      console.log("Message received in Express:", message.data);
-    };
-    socket.onerror = (error) => {
+      socket?.send(JSON.stringify(msg));
+    });
+
+    socket.on("message", (message) => {
+      console.log("Message received in Express:", message.toString());
+    });
+
+    socket.on("error", (error) => {
       console.error("WebSocket error:", error);
-    };
-    socket.onclose = (event) => {
-      console.log("WebSocket connection closed:", event.reason);
+    });
+
+    socket.on("close", (event) => {
+      console.log("WebSocket connection closed:", event);
       reconnectWs(url);
-    };
+    });
   } catch (err) {
     console.error("Error establishing WebSocket connection:", err);
   }
@@ -29,7 +40,7 @@ export async function connectWs(url: string) {
 
 export function reconnectWs(url: string) {
   console.log("Attempting to reconnect WebSocket...");
-  connectWs(url);
+  setTimeout(() => connectWs(url), 1000);
 }
 
 export { socket };

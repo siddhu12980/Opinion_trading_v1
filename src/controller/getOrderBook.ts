@@ -1,15 +1,32 @@
 import { Request, Response, NextFunction } from "express"
-import { ORDERBOOK } from "../constants/const";
+import { ORDERBOOK, reqTypes } from "../constants/const";
+import { reconnectRedis, redisClient } from '../PubSubManager';
+import { v4 as uuidv4 } from 'uuid';
 
-export const getOrderbookBuy = (req: Request, res: Response, next: NextFunction) => {
+export const getOrderbook = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const stockSymbol = req.params.stockSymbol;
-    const stockOrders = ORDERBOOK[stockSymbol];
-    if (!stockOrders) {
-      res.status(404).json({ message: "No orders found for the stock" });
-    } else {
-      res.json({ orders: stockOrders });
+
+    if (!redisClient?.isOpen) {
+      await reconnectRedis();
     }
+
+    const id = uuidv4();
+
+    const data = JSON.stringify({
+      req: reqTypes.getOrderbook,
+      stockSymbol,
+      id
+    });
+
+    await redisClient?.lPush("req", data);
+
+    //   const stockOrders = doGetOrderbook(stockSymbol);
+
+    res.status(202).json({
+      message: `Order book request for ${stockSymbol} has been queued`,
+      id
+    });
   } catch (error) {
     next(error);
   }

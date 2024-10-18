@@ -1,14 +1,14 @@
 import express, { Request, Response, NextFunction } from "express"
-import { ORDERBOOK, STOCK_BALANCES } from "../constants/const";
-import { Stock } from "../interface/interface";
-import { reconnectWs, socket } from "../ws/wsConnectExpress";
 
+import { v4 as uuidv4 } from 'uuid';
+import { reconnectRedis, redisClient } from "../PubSubManager";
+import { reqTypes } from "../constants/const";
 
-export const selOrder = (req: Request, res: Response, next: NextFunction) => {
-  if (!socket) {
-    reconnectWs("ws://localhost:8080")
-  }
+export const selOrder = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (!redisClient?.isOpen) {
+      reconnectRedis()
+    }
     const { userId, stockSymbol, quantity, price, stockType }: {
       userId: string,
       stockSymbol: string,
@@ -21,61 +21,24 @@ export const selOrder = (req: Request, res: Response, next: NextFunction) => {
       res.status(400).json({ message: "Missing required parameters" });
     }
 
-    const user_stock_balance = STOCK_BALANCES[userId];
-    if (!user_stock_balance) {
-      res.status(404).json({ message: "User does not exist" });
-    }
-
-    if (!user_stock_balance[stockSymbol]) {
-      res.status(404).json({ message: "User does not have corresponding stock" });
-    }
-
-    if (!user_stock_balance[stockSymbol][stockType]) {
-      res.status(400).json({ message: "Not Available " });
-
-    }
-
-    if (!user_stock_balance[stockSymbol][stockType] ||
-      typeof user_stock_balance[stockSymbol][stockType]!.quantity !== 'number' ||
-      user_stock_balance[stockSymbol][stockType]!.quantity < quantity) {
-      res.status(400).json({ message: "Insufficient stock balance to place order" });
-    }
-
-    if (!ORDERBOOK[stockSymbol]) {
-      ORDERBOOK[stockSymbol] = { yes: {}, no: {} };
-    }
-
-    const ordersPriceCheck = ORDERBOOK[stockSymbol][stockType];
-    if (!ordersPriceCheck[price]) {
-      ordersPriceCheck[price] = { total: 0, orders: {} };
-    }
-
-    const orderList = ordersPriceCheck[price].orders;
-    if (!orderList[userId]) {
-      orderList[userId] = {
-        "normal": quantity,
-        "inverse": 0
-      }
-    } else {
-      orderList[userId].normal += quantity;
-    }
-
-    ordersPriceCheck[price].total += quantity;
-
-    const user_balance = user_stock_balance[stockSymbol][stockType]! as Stock;
-    user_balance.quantity -= quantity;
-    user_balance.locked += quantity;
-
-    socket?.send(JSON.stringify(ORDERBOOK[stockSymbol]))
-
-    res.json({
-      message: `Market sell ${stockType} Order placed successfully`,
-      orders: ORDERBOOK[stockSymbol],
-      updatedBalance: user_stock_balance
+    const id = uuidv4();
+    const queueMessage = JSON.stringify({
+      req: reqTypes.sellOrder,
+      id,
+      userId,
+      stockSymbol,
+      quantity,
+      price,
+      stockType
     });
+
+    await redisClient?.lPush("req", queueMessage);
+
+    // const result = doSellOrder(userId, stockSymbol, quantity, price, stockType);
+    //
+    res.json(queueMessage);
+
   } catch (error) {
     next(error);
   }
 };
-
-

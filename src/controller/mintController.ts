@@ -1,7 +1,9 @@
-import { INR_BALANCES, ORDERBOOK, STOCK_BALANCES } from "../constants/const";
-import express, { Response, Request, NextFunction } from "express"
+import { Response, Request, NextFunction } from "express"
+import { v4 as uuidv4 } from 'uuid';
+import { reconnectRedis, redisClient } from '../PubSubManager';
+import { reqTypes } from "../constants/const";
 
-export const mintStock = (req: Request, res: Response, next: NextFunction) => {
+export const mintStock = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { userId, quantity, price } = req.body;
     const stockSymbol = req.params.stockSymbol;
@@ -10,55 +12,26 @@ export const mintStock = (req: Request, res: Response, next: NextFunction) => {
       res.status(400).json({ message: "Missing required parameters" });
     }
 
-    if (!INR_BALANCES[userId]) {
-      res.json({
-        "message": "User not Found"
-      })
-
+    if (!redisClient?.isOpen) {
+      await reconnectRedis();
     }
 
-    if (INR_BALANCES[userId].balance < price * quantity) {
-      res.json({
-        "message": "Insufficent fund for minting"
-      })
-    }
-    if (!STOCK_BALANCES[userId]) {
-      STOCK_BALANCES[userId] = {};
-    }
+    const id = uuidv4();
 
-    if (!STOCK_BALANCES[userId][stockSymbol]) {
-      STOCK_BALANCES[userId][stockSymbol] = {}
-    }
+    const data = JSON.stringify({
+      req: reqTypes.mintStock,
+      userId,
+      stockSymbol,
+      quantity,
+      price,
+      id
+    });
 
-    if (!STOCK_BALANCES[userId][stockSymbol].yes) {
-      STOCK_BALANCES[userId][stockSymbol]["yes"] = {
-        quantity: quantity,
-        locked: 0
-      }
-    } else {
-      STOCK_BALANCES[userId][stockSymbol]["yes"]!.quantity += quantity
-    }
+    await redisClient?.lPush("req", data);
 
-    if (!STOCK_BALANCES[userId][stockSymbol].no) {
-      STOCK_BALANCES[userId][stockSymbol]["no"] = {
-        quantity: quantity,
-        locked: 0
-      }
-    } else {
-      STOCK_BALANCES[userId][stockSymbol]["no"]!.quantity += quantity
-    }
-
-    if (!ORDERBOOK[stockSymbol]) {
-      ORDERBOOK[stockSymbol] = { yes: {}, no: {} };
-    }
-
-    INR_BALANCES[userId].balance -= price * quantity
-
-    res.json({
-      message: `Stock ${stockSymbol} minted for user ${userId}`,
-      STOCK_BALANCES: STOCK_BALANCES[userId],
-      orderBook: ORDERBOOK[stockSymbol],
-      INR_BALANCES: INR_BALANCES[userId]
+    res.status(202).json({
+      message: `Mint stock request for ${stockSymbol} by user ${userId} has been queued`,
+      id
     });
   } catch (error) {
     next(error);

@@ -1,23 +1,25 @@
 import { Request, Response } from "express";
-import { INR_BALANCES, ORDERBOOK, STOCK_BALANCES } from "../constants/const";
+import { reconnectRedis, redisClient } from "../PubSubManager";
+import { v4 as uuidv4 } from 'uuid';
+import { reqTypes } from "../constants/const";
 
-function clearObject(obj: any) {
-  for (let key in obj) {
-    if (obj.hasOwnProperty(key)) {
-      delete obj[key];
+export async function resetController(req: Request, res: Response) {
+  try {
+
+    if (!redisClient?.isOpen) {
+      await reconnectRedis()
     }
+
+    const id = uuidv4()
+
+    const data = JSON.stringify({ "req": reqTypes.reset, "id": id })
+
+    redisClient?.lPush("req", data)
+    res.json({ "message": "Reset Done" })
   }
-}
-
-export function resetController(req: Request, res: Response) {
-  clearObject(ORDERBOOK);
-  clearObject(STOCK_BALANCES);
-  clearObject(INR_BALANCES);
-
-  res.json({
-    message: "Object Reset Complete",
-    ORDERBOOK,
-    STOCK_BALANCES,
-    INR_BALANCES,
-  });
+  catch (e) {
+    res.status(501).json({
+      "message": e
+    })
+  }
 }
