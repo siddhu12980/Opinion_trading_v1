@@ -9,10 +9,9 @@ export const mintStock = async (req: Request, res: Response, next: NextFunction)
     const subclient = redisPubSubManager
     await redisPubSubManager.ensureRedisConnection()
 
+    const price = 1000
 
-
-    const { userId, quantity, price } = req.body;
-    const stockSymbol = req.params.stockSymbol;
+    const { userId, quantity, stockSymbol } = req.body;
 
     if (!userId || !quantity || !stockSymbol || !price) {
       res.status(400).json({ message: "Missing required parameters" });
@@ -37,7 +36,7 @@ export const mintStock = async (req: Request, res: Response, next: NextFunction)
 
 
     await subclient.listenForMessages(id, (message) => {
-      res.json(
+      res.status(200).json(
         message
       )
     })

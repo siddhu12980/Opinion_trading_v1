@@ -19,7 +19,7 @@ export async function resetController(req: Request, res: Response) {
     redisClient?.lPush("req", data)
 
     await subclient.listenForMessages(id, (message) => {
-      res.json(
+      res.status(200).json(
         message
       )
     })

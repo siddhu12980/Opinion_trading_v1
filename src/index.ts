@@ -1,10 +1,8 @@
 import express, { Request, Response } from "express";
 import routes from "./routes";
 import { errorHandler } from "./middelware/errorHandling";
-import { startWebSocketServer } from "./ws";
 const app = express();
 const httpPort = 3000;
-const wsPort = 8080;
 
 
 app.use(express.json());
@@ -17,6 +15,8 @@ app.get("/", (req: Request, res: Response) => {
 
 app.use("/api/v1", routes);
 app.use(errorHandler);
+
+
 
 app.listen(httpPort, () => {
   console.log(`HTTP server running on port ${httpPort}`);

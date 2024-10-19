@@ -10,7 +10,7 @@ export function doOnramp(userId: string, amount: number) {
   }
   user.balance += amount;
 
-  return { user, message: `Onramped ${userId} with amount ${amount}` };
+  return { user, message: `Onramped ${userId} with amount ${amount / 100}` };
 }
 
 

@@ -1,6 +1,6 @@
 
 import { WebSocketServer, WebSocket } from 'ws';
-const subscriptions: Map<string, Set<WebSocket>> = new Map();
+import { redisPubSubManager } from '../PubSubManager/managet';
 
 export function startWebSocketServer(port: number) {
   const wss = new WebSocketServer({ port }, () => {
@@ -8,32 +8,26 @@ export function startWebSocketServer(port: number) {
   });
 
   wss.on('connection', (ws: WebSocket) => {
+    console.log("Connected")
 
-    ws.on('message', (message: string) => {
-      const data = JSON.parse(message);
-      const stockSymbol = data.stockSymbol;
+    ws.on('message', async (data: string) => {
+      try {
 
-      // Add the client (WebSocket) to the subscription list for this stockSymbol
-      if (!subscriptions.has(stockSymbol)) {
-        subscriptions.set(stockSymbol, new Set());
+        console.log("Message inside ws on message");
+        const parsedData = JSON.parse(data);
+        console.log(parsedData);
+
+        if (parsedData.stockSymbol) {
+          await redisPubSubManager.listenForMessages(parsedData.stockSymbol, async (message) => {
+            ws.send(JSON.stringify(message));
+          });
+        }
+      } catch (e) {
+        console.error("Error while sending data:", e);
       }
-
-      const stockSet = subscriptions.get(stockSymbol);
-      console.log(`Before adding: ${stockSymbol} has ${stockSet?.size || 0} clients`);
-
-      stockSet?.add(ws);
-
-      console.log(`After adding: ${stockSymbol} has ${stockSet?.size || 0} clients`);
     });
-
     ws.on('close', () => {
       console.log('WebSocket connection closed for client');
-      subscriptions.forEach((clients, stockSymbol) => {
-        clients.delete(ws);
-        if (clients.size === 0) {
-          subscriptions.delete(stockSymbol);
-        }
-      });
     });
 
     ws.on('error', (error) => {
@@ -43,19 +37,3 @@ export function startWebSocketServer(port: number) {
 }
 
 
-export function broadcastOrderBookUpdate(stockSymbol: string, update: any) {
-  console.log("inside broadcast")
-  const clients = subscriptions.get(stockSymbol);
-  console.log(`Broadcasting update to ${clients?.size || 0} clients for stock ${stockSymbol}`);
-
-  if (clients) {
-    clients.forEach((client) => {
-      try {
-        console.log("Sending update to client:", update);
-        client.send(JSON.stringify(update));
-      } catch (error) {
-        console.error("Failed to send message to client:", error);
-      }
-    });
-  }
-}

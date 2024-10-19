@@ -1,9 +1,9 @@
 import { WebSocket } from "ws";
 import { ORDERBOOK, STOCK_BALANCES } from "../../constants/const";
 import { Stock } from "../../interface/interface";
-import { broadcastOrderBookUpdate } from "../../ws";
+import { redisPubSubManager } from "../../PubSubManager/managet";
 
-export function doSellOrder(userId: string, stockSymbol: string, quantity: number, price: number, stockType: "yes" | "no") {
+export async function doSellOrder(userId: string, stockSymbol: string, quantity: number, price: number, stockType: "yes" | "no") {
   try {
 
 
@@ -49,8 +49,7 @@ export function doSellOrder(userId: string, stockSymbol: string, quantity: numbe
     user_balance.quantity -= quantity;
     user_balance.locked += quantity;
 
-    broadcastOrderBookUpdate(stockSymbol, ORDERBOOK[stockSymbol]);
-
+    await redisPubSubManager.sendMessage(stockSymbol, JSON.stringify(STOCK_BALANCES[stockSymbol]))
 
     return {
       message: `Market sell ${stockType} Order placed successfully`,

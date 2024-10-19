@@ -10,7 +10,6 @@ export async function onrampINR(req: Request, res: Response, next: NextFunction)
     const subclient = redisPubSubManager
 
 
-
     if (!redisClient?.isOpen) {
       await reconnectRedis()
     }

@@ -143,7 +143,7 @@ export async function startEngine() {
 
       case reqTypes.sellOrder:
         console.log("Get Sell Order :", req)
-        res = doSellOrder(req.userId, req.stockSymbol, req.quantity, req.price, req.stockType)
+        res = await doSellOrder(req.userId, req.stockSymbol, req.quantity, req.price, req.stockType)
         pubclient.sendMessage(req.id, JSON.stringify(res))
         console.log(res)
 

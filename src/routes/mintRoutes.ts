@@ -3,6 +3,6 @@ import { mintStock } from "../controller/mintController";
 
 const router = express.Router();
 
-router.post("/mint/:stockSymbol", mintStock);
+router.post("/mint", mintStock);
 
 export default router;

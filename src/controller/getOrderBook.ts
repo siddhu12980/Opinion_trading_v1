@@ -27,7 +27,7 @@ export const getOrderbook = async (req: Request, res: Response, next: NextFuncti
     await redisClient?.lPush("req", data);
 
     await subclient.listenForMessages(id, (message) => {
-      res.json(
+      res.status(200).json(
         message
       )
     })
@@ -60,7 +60,7 @@ export const getAllOrderbook = async (req: Request, res: Response, next: NextFun
     await redisClient?.lPush("req", data);
 
     await subclient.listenForMessages(id, (message) => {
-      res.json(
+      res.status(200).json(
         message
       )
     })

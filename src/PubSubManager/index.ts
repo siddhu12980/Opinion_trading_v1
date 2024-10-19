@@ -4,9 +4,7 @@ type RedisClient = ReturnType<typeof createClient>;
 let redisClient: RedisClient | null = null;
 export async function createConnectRedis(): Promise<void> {
   const client = await createClient();
-
   await client.connect();
-
   if (client.isOpen) {
     redisClient = client;
   }

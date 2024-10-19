@@ -30,7 +30,7 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
     await redisClient?.lPush("req", data)
 
     await subclient.listenForMessages(id, (message) => {
-      res.json(
+      res.status(200).json(
         message
       )
     })

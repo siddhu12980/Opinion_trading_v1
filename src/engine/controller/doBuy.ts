@@ -1,9 +1,11 @@
+import e from "express";
 import { INR_BALANCES, ORDERBOOK, STOCK_BALANCES } from "../../constants/const";
-import { broadcastOrderBookUpdate } from "../../ws";
 import { matchOrders, updateUserBalance } from "../../helper/helper";
+import { redisPubSubManager } from "../../PubSubManager/managet";
 
 export async function doBuyNoOrder(userId: string, stockSymbol: string, quantity: number, price: number) {
   try {
+    await redisPubSubManager.ensureRedisConnection()
     let orderList;
     let msg;
     const userBalance = INR_BALANCES[userId];
@@ -18,15 +20,15 @@ export async function doBuyNoOrder(userId: string, stockSymbol: string, quantity
     const reverseOrdersCheck = ORDERBOOK[stockSymbol]["yes"];
 
     if (!ordersPriceCheck[price]) {
-      if (!reverseOrdersCheck[10 - price]) {
-        reverseOrdersCheck[10 - price] = { total: 0, orders: {} };
+      if (!reverseOrdersCheck[1000 - price]) {
+        reverseOrdersCheck[1000 - price] = { total: 0, orders: {} };
       }
-      orderList = reverseOrdersCheck[10 - price].orders;
+      orderList = reverseOrdersCheck[1000 - price].orders;
     } else {
       orderList = ordersPriceCheck[price].orders;
     }
     if (!ordersPriceCheck[price]) {
-      reverseOrdersCheck[10 - price].total += quantity;
+      reverseOrdersCheck[1000 - price].total += quantity;
       if (!orderList[userId]) {
         orderList[userId] = {
           inverse: 0,
@@ -56,10 +58,10 @@ export async function doBuyNoOrder(userId: string, stockSymbol: string, quantity
       }
 
       if (remainingQuantity > 0) {
-        if (!reverseOrdersCheck[10 - price]) {
-          reverseOrdersCheck[10 - price] = { total: 0, orders: {} };
+        if (!reverseOrdersCheck[1000 - price]) {
+          reverseOrdersCheck[1000 - price] = { total: 0, orders: {} };
         }
-        orderList = reverseOrdersCheck[10 - price].orders;
+        orderList = reverseOrdersCheck[1000 - price].orders;
 
         if (!orderList[userId]) {
           orderList[userId] = {
@@ -69,7 +71,7 @@ export async function doBuyNoOrder(userId: string, stockSymbol: string, quantity
         }
         orderList[userId].inverse = (orderList[userId].inverse || 0) + remainingQuantity
 
-        reverseOrdersCheck[10 - price].total += remainingQuantity
+        reverseOrdersCheck[1000 - price].total += remainingQuantity
 
         userBalance.balance -= remainingQuantity * price
         userBalance.locked += remainingQuantity * price
@@ -90,10 +92,14 @@ export async function doBuyNoOrder(userId: string, stockSymbol: string, quantity
         }
       }
     }
-    broadcastOrderBookUpdate(stockSymbol, ORDERBOOK[stockSymbol])
+
+    console.log("DO doBuyNoOrder")
+    await redisPubSubManager.sendMessage(stockSymbol, JSON.stringify({ "message": ORDERBOOK[stockSymbol] }))
 
     return msg
   } catch (err: any) {
+
+    console.log(err)
 
     return {
       "message": "Error whole placing order",
@@ -104,6 +110,7 @@ export async function doBuyNoOrder(userId: string, stockSymbol: string, quantity
 
 export async function doBuyYesOrder(userId: string, stockSymbol: string, quantity: number, price: number) {
   try {
+    redisPubSubManager.ensureRedisConnection()
 
     let msg;
     let orderList;
@@ -125,17 +132,17 @@ export async function doBuyYesOrder(userId: string, stockSymbol: string, quantit
     const reverseOrdersCheck = ORDERBOOK[stockSymbol]["no"];
 
     if (!ordersPriceCheck[price]) {
-      if (!reverseOrdersCheck[10 - price]) {
-        reverseOrdersCheck[10 - price] = { total: 0, orders: {} };
+      if (!reverseOrdersCheck[1000 - price]) {
+        reverseOrdersCheck[1000 - price] = { total: 0, orders: {} };
       }
-      orderList = reverseOrdersCheck[10 - price].orders;
+      orderList = reverseOrdersCheck[1000 - price].orders;
     } else {
       orderList = ordersPriceCheck[price].orders;
     }
 
 
     if (!ordersPriceCheck[price]) {
-      reverseOrdersCheck[10 - price].total += quantity;
+      reverseOrdersCheck[1000 - price].total += quantity;
 
       if (!orderList[userId]) {
         orderList[userId] = {
@@ -163,10 +170,10 @@ export async function doBuyYesOrder(userId: string, stockSymbol: string, quantit
         delete ordersPriceCheck[price]
       }
       if (remainingQuantity > 0) {
-        if (!reverseOrdersCheck[10 - price]) {
-          reverseOrdersCheck[10 - price] = { total: 0, orders: {} };
+        if (!reverseOrdersCheck[1000 - price]) {
+          reverseOrdersCheck[1000 - price] = { total: 0, orders: {} };
         }
-        orderList = reverseOrdersCheck[10 - price].orders;
+        orderList = reverseOrdersCheck[1000 - price].orders;
 
 
         if (!orderList[userId]) {
@@ -176,11 +183,10 @@ export async function doBuyYesOrder(userId: string, stockSymbol: string, quantit
           }
         }
         orderList[userId].inverse = (orderList[userId].inverse || 0) + remainingQuantity
-        reverseOrdersCheck[10 - price].total += remainingQuantity
+        reverseOrdersCheck[1000 - price].total += remainingQuantity
 
 
         userBalance.balance -= remainingQuantity * price
-
 
         msg = {
 
@@ -203,15 +209,21 @@ export async function doBuyYesOrder(userId: string, stockSymbol: string, quantit
 
     }
 
-    broadcastOrderBookUpdate(stockSymbol, ORDERBOOK[stockSymbol])
+    await redisPubSubManager.sendMessage(stockSymbol, JSON.stringify({ "message": ORDERBOOK[stockSymbol] }))
+
+
+
+
 
     return msg
 
   } catch (err: any) {
 
+    console.log(err)
     return {
       "message": "Error whole placing order",
       "error": err.message
+
     }
   }
 

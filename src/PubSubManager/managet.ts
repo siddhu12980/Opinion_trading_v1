@@ -7,10 +7,8 @@ class RedisPubSubManager {
 
   private constructor() {
     console.log('RedisPubSubManager created');
-
     this.subClient = createClient();
     this.pubClient = createClient();
-
     this.subClient.on('error', (err) => console.error('Redis Subscriber Error', err));
     this.pubClient.on('error', (err) => console.error('Redis Publisher Error', err));
   }
@@ -22,7 +20,6 @@ class RedisPubSubManager {
     return RedisPubSubManager._instance;
 
   }
-
   async ensureRedisConnection() {
     try {
       if (!this.subClient.isOpen) {
@@ -42,10 +39,10 @@ class RedisPubSubManager {
 
   sendMessage = async (roomId: string, message: string) => {
     await this.ensureRedisConnection();
+    console.log("Sending Message PUB")
     await this.pubClient.publish(roomId, (message));
+    console.log("after publish")
   }
-
-
 
   listenForMessages = async (roomId: string, callback: (message: string) => void) => {
     await this.ensureRedisConnection();
