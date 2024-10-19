@@ -42,7 +42,7 @@ export function doMintStock(userId: string, stockSymbol: string, quantity: numbe
       ORDERBOOK[stockSymbol] = { yes: {}, no: {} };
     }
 
-    INR_BALANCES[userId].balance -= price * quantity;
+    INR_BALANCES[userId].balance -= (price * quantity);
 
     return {
       stockBalances: STOCK_BALANCES[userId],

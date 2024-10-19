@@ -2,7 +2,7 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { redisPubSubManager } from '../PubSubManager/managet';
 
-export function startWebSocketServer(port: number) {
+function startWebSocketServer(port: number) {
   const wss = new WebSocketServer({ port }, () => {
     console.log(`WebSocket server is listening on port ${port}`);
   });
@@ -12,7 +12,6 @@ export function startWebSocketServer(port: number) {
 
     ws.on('message', async (data: string) => {
       try {
-
         console.log("Message inside ws on message");
         const parsedData = JSON.parse(data);
         console.log(parsedData);

@@ -42,13 +42,15 @@ export const selOrder = async (req: Request, res: Response, next: NextFunction) 
 
 
     await subclient.listenForMessages(id, (message) => {
-      res.json(
+      res.status(200).json(
         message
       )
     })
 
 
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    res.status(500).json({
+      "message": error.message
+    })
   }
 };

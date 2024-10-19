@@ -1,4 +1,3 @@
-import e from "express";
 import { INR_BALANCES, ORDERBOOK, STOCK_BALANCES } from "../../constants/const";
 import { matchOrders, updateUserBalance } from "../../helper/helper";
 import { redisPubSubManager } from "../../PubSubManager/managet";
@@ -209,6 +208,18 @@ export async function doBuyYesOrder(userId: string, stockSymbol: string, quantit
 
     }
 
+
+    console.log('code is here')
+    console.log('code is here')
+    console.log('code is here')
+    console.log('code is here')
+    console.log('code is here')
+    console.log('code is here')
+    console.log('code is here')
+    console.log('code is here')
+    console.log('code is here')
+    console.log('code is here')
+    console.log('code is here')
     await redisPubSubManager.sendMessage(stockSymbol, JSON.stringify({ "message": ORDERBOOK[stockSymbol] }))
 
 

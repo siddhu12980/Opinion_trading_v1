@@ -49,7 +49,10 @@ export async function doSellOrder(userId: string, stockSymbol: string, quantity:
     user_balance.quantity -= quantity;
     user_balance.locked += quantity;
 
-    await redisPubSubManager.sendMessage(stockSymbol, JSON.stringify(STOCK_BALANCES[stockSymbol]))
+    console.log("here")
+    console.log("here")
+    console.log("here")
+    await redisPubSubManager.sendMessage(stockSymbol, JSON.stringify(ORDERBOOK[stockSymbol]))
 
     return {
       message: `Market sell ${stockType} Order placed successfully`,
@@ -59,12 +62,11 @@ export async function doSellOrder(userId: string, stockSymbol: string, quantity:
   }
   catch (e: any) {
     return {
-      "message": e.message
+      "message": e
+
     }
 
   }
-
-
 }
 
 

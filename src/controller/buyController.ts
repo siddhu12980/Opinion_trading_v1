@@ -48,7 +48,7 @@ const buyYesorder = async (userId: string, stockSymbol: string, quantity: number
     redisClient?.lPush("req", JSON.stringify(message))
 
     await subclient.listenForMessages(id, (message) => {
-      res.json(
+      res.status(200).json(
         message
       )
     })
@@ -89,7 +89,7 @@ const buyNoorder = async (userId: string, stockSymbol: string, quantity: number,
     redisClient?.lPush("req", JSON.stringify(message))
 
     await subclient.listenForMessages(id, (message) => {
-      res.json(
+      res.status(200).json(
         message
       )
     })

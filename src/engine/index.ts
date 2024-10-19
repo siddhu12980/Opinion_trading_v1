@@ -1,7 +1,7 @@
 import { reqTypes } from "../constants/const";
 import { reconnectRedis, redisClient } from "../PubSubManager";
 import { redisPubSubManager } from "../PubSubManager/managet";
-import { startWebSocketServer } from "../ws";
+import { startWebSocketServer } from "../ws/temp";
 import { doGetAllINRBalance, doGetAllStockBalance, doGetINRBalance, doGetStockBalance } from "./controller/doBalance";
 import { doBuyNoOrder, doBuyYesOrder } from "./controller/doBuy";
 import { doCreateSymbol } from "./controller/doCreateSymbol";
@@ -14,9 +14,9 @@ import { doCreateUser } from "./controller/doUserCreate";
 
 
 export async function startEngine() {
+  startWebSocketServer(8080)
   const pubclient = redisPubSubManager
   await redisPubSubManager.ensureRedisConnection()
-  startWebSocketServer(8080);
 
   if (!redisClient?.isOpen || !redisClient) {
     await reconnectRedis()
