@@ -180,11 +180,10 @@ describe('Trading System Tests', () => {
     const executionWsMessage = await waitForWSMessage();
 
     expect(executionWsMessage.yes?.[price]).toBeUndefined();
-
     const buyerStockBalance = axios.get(`${HTTP_SERVER_URL}/balance/stock/${buyerId}`);
-    const res_1 = await buyerStockBalance
 
     const sellerInrBalance = axios.get(`${HTTP_SERVER_URL}/balance/inr/${sellerId}`);
+    const res_1 = await buyerStockBalance
 
     const res_2 = await sellerInrBalance
     console.log("HEre")
