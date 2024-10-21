@@ -1,38 +1,38 @@
-# Stage 1: Build the TypeScript files
+
 FROM node:18-alpine AS builder
 
-# Set the working directory in the container
+
 WORKDIR /app
 
-# Copy package.json and package-lock.json (if present)
+
 COPY package*.json ./
 
-# Install dependencies (both production and dev dependencies, including TypeScript)
+
 RUN npm install
 
-# Copy the rest of the application source coded
+
 COPY . .
 
-# Install TypeScript globally
+
 RUN npm install -g typescript
 
-# Compile TypeScript files to JavaScript
+
 RUN tsc
 
-# Stage 2: Run the WebSocket server
+
 FROM node:18-alpine
 
-# Set the working directory in the container
+
 WORKDIR /app
 
-# Copy the compiled JavaScript files from the build stage
+
 COPY --from=builder /app ./
 
-# Install only production dependencies
+
 RUN npm ci --only=production
 
-# Expose the port used by the WebSocket server (e.g., 8080)
+
 EXPOSE 8080
 
-# Command to run the WebSocket server
+
 CMD ["node", "dist/index.js"]

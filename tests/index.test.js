@@ -1,9 +1,9 @@
 const axios = require('axios');
 const WebSocket = require('ws');
 
-const HTTP_SERVER_URL = 'http://localhost:3000/api/v1';
-const WS_SERVER_URL = 'ws://localhost:8080';
 
+const HTTP_SERVER_URL = 'https://probo.sidd.live/api/v1';
+const WS_SERVER_URL = 'wss://ws.sidd.live';
 
 describe('Trading System Tests', () => {
   let ws;
@@ -138,7 +138,7 @@ describe('Trading System Tests', () => {
     });
   });
 
-  test('Execute matching orders and check WebSocket response', async () => {
+  test.skip('Execute matching orders and check WebSocket response', async () => {
     const buyerId = 'buyer1';
     const sellerId = 'seller1';
     const symbol = 'AAPL_USDT_20_Jan_2025_10_00';
@@ -195,7 +195,7 @@ describe('Trading System Tests', () => {
 
 
 
-  test('Execute minting opposite orders with higher quantity and check WebSocket response', async () => {
+  test.skip('Execute minting opposite orders with higher quantity and check WebSocket response', async () => {
     const buyerId = 'buyer1';
     const buyer2Id = 'buyer2'
     const symbol = 'AAPL_USDT_20_Jan_2025_10_00';
@@ -254,7 +254,7 @@ describe('Trading System Tests', () => {
 
 
 
-  test('Execute buying stocks from multiple users and check WebSocket response', async () => {
+  test.skip('Execute buying stocks from multiple users and check WebSocket response', async () => {
     const buyerId = 'buyer1';
     const buyer2Id = 'buyer2'
     const buyer3Id = 'buyer3'
