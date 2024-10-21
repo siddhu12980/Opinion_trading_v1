@@ -4,9 +4,28 @@ import { redisPubSubManager } from "../helper/manager";
 import { reqTypes } from "../constants/const";
 import { reconnectRedis, redisClient } from "../constants/client";
 
+export const handlePubSubWithTimeout = (uid: string, timeoutMs: number): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    const channel = uid;
+
+    const timeout = setTimeout(() => {
+
+      redisPubSubManager!.unsubscribeUser(channel);
+      reject(new Error("Response timed out"));
+    }, timeoutMs);
+
+
+    redisPubSubManager.listenForMessages(channel, (data) => {
+      clearTimeout(timeout)
+      redisPubSubManager.unsubscribeUser(channel)
+      resolve(data)
+    })
+
+  });
+};
+
 export const getINRBalance = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const subclient = redisPubSubManager
     await redisPubSubManager.ensureRedisConnection()
 
     const userId = req.params.userId;
@@ -27,13 +46,15 @@ export const getINRBalance = async (req: Request, res: Response, next: NextFunct
       id,
     });
 
+
+    const promisData = handlePubSubWithTimeout(id, 5000)
+
     await redisClient?.lPush("req", data);
 
+    const resData = await promisData
 
-    await subclient.listenForMessages(id, (message) => {
-      res.json(
-        message
-      )
+    res.json({
+      ...resData
     })
 
 
@@ -44,7 +65,6 @@ export const getINRBalance = async (req: Request, res: Response, next: NextFunct
 
 export const getStockBalance = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const subclient = redisPubSubManager
     await redisPubSubManager.ensureRedisConnection()
 
 
@@ -66,15 +86,18 @@ export const getStockBalance = async (req: Request, res: Response, next: NextFun
       id,
     });
 
+
+    const promisData = handlePubSubWithTimeout(id, 5000)
+
     await redisClient?.lPush("req", data);
 
+    const resData = await promisData
 
-    await subclient.listenForMessages(id, (message) => {
-
-      res.json(
-        message
-      )
+    res.json({
+      ...resData
     })
+
+
 
   } catch (error) {
     next(error);
@@ -85,7 +108,6 @@ export const getStockBalance = async (req: Request, res: Response, next: NextFun
 
 export const getallINRBalance = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const subclient = redisPubSubManager
     await redisPubSubManager.ensureRedisConnection()
 
 
@@ -100,15 +122,20 @@ export const getallINRBalance = async (req: Request, res: Response, next: NextFu
     });
 
 
+
+    const promisData = handlePubSubWithTimeout(id, 5000)
+
     await redisClient?.lPush("req", data);
 
+    const resData = await promisData
 
-    await subclient.listenForMessages(id, (message) => {
-
-      res.json(
-        message
-      )
+    res.json({
+      ...resData
     })
+
+
+
+
 
 
   } catch (error) {
@@ -118,7 +145,6 @@ export const getallINRBalance = async (req: Request, res: Response, next: NextFu
 
 export const getallStockBalance = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const subclient = redisPubSubManager
     await redisPubSubManager.ensureRedisConnection()
 
 
@@ -130,14 +156,20 @@ export const getallStockBalance = async (req: Request, res: Response, next: Next
       req: reqTypes.getallStockBalance,
       id,
     });
+
+
+    const promisData = handlePubSubWithTimeout(id, 5000)
+
     await redisClient?.lPush("req", data);
 
+    const resData = await promisData
 
-    await subclient.listenForMessages(id, (message) => {
-      res.json(
-        message
-      )
+    res.json({
+      ...resData
     })
+
+
+
 
 
   } catch (error) {

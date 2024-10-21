@@ -3,11 +3,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { redisPubSubManager } from "../helper/manager";
 import { reqTypes } from "../constants/const";
 import { reconnectRedis, redisClient } from "../constants/client";
+import { handlePubSubWithTimeout } from "./balanceController";
 
 export async function onrampINR(req: Request, res: Response, next: NextFunction) {
   try {
     await redisPubSubManager.ensureRedisConnection()
-    const subclient = redisPubSubManager
 
 
     if (!redisClient?.isOpen) {
@@ -25,13 +25,18 @@ export async function onrampINR(req: Request, res: Response, next: NextFunction)
       id,
     };
 
+
+    const promisData = handlePubSubWithTimeout(id, 5000)
+
     await redisClient?.lPush("req", JSON.stringify(queueMessage));
 
-    await subclient.listenForMessages(id, (message) => {
-      res.json(
-        message
-      )
+    const resData = await promisData
+
+    res.json({
+      ...resData
     })
+
+
 
 
   } catch (error) {

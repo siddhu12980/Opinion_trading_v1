@@ -207,6 +207,7 @@ export async function doBuyYesOrder(userId: string, stockSymbol: string, quantit
       }
 
     }
+
     await redisPubSubManager.sendMessage(stockSymbol, JSON.stringify({ "message": ORDERBOOK[stockSymbol] }))
 
     return msg

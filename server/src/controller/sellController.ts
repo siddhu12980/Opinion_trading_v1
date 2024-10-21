@@ -4,10 +4,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { redisPubSubManager } from "../helper/manager";
 import { reconnectRedis, redisClient } from "../constants/client";
 import { reqTypes } from "../constants/const";
+import { handlePubSubWithTimeout } from "./balanceController";
 
 export const selOrder = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const subclient = redisPubSubManager
     await redisPubSubManager.ensureRedisConnection()
 
 
@@ -38,14 +38,19 @@ export const selOrder = async (req: Request, res: Response, next: NextFunction) 
       stockType
     });
 
+
+
+    const promisData = handlePubSubWithTimeout(id, 5000)
+
     await redisClient?.lPush("req", queueMessage);
 
+    const resData = await promisData
 
-    await subclient.listenForMessages(id, (message) => {
-      res.status(200).json(
-        message
-      )
+    res.json({
+      ...resData
     })
+
+
 
 
   } catch (error: any) {

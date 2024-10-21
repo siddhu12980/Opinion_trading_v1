@@ -8,7 +8,7 @@ class RedisPubSubManager {
 
   private constructor() {
     console.log('RedisPubSubManager created');
-    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379'; // Default to localhost if REDIS_URL is not set
+    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379'; 
 
     this.subClient = createClient({url:redisUrl});
     this.pubClient = createClient({url:redisUrl});

@@ -3,11 +3,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { reqTypes } from "../constants/const";
 import { reconnectRedis, redisClient } from "../constants/client";
 import { redisPubSubManager } from "../helper/manager";
+import { handlePubSubWithTimeout } from "./balanceController";
 
 
 export const createUser = async (req: Request, res: Response, next: NextFunction) => {
 
-  const subclient = redisPubSubManager
   await redisPubSubManager.ensureRedisConnection()
 
   try {
@@ -27,13 +27,20 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
       user
     })
 
-    await redisClient?.lPush("req", data)
 
-    await subclient.listenForMessages(id, (message) => {
-      res.status(200).json(
-        message
-      )
+
+    const promisData = handlePubSubWithTimeout(id, 5000)
+
+    await redisClient?.lPush("req", data);
+
+    const resData = await promisData
+
+    res.json({
+      ...resData
     })
+
+
+
   } catch (error) {
     next(error);
   }

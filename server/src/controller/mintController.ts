@@ -3,10 +3,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { redisPubSubManager } from "../helper/manager";
 import { reconnectRedis, redisClient } from "../constants/client";
 import { reqTypes } from "../constants/const";
+import { handlePubSubWithTimeout } from "./balanceController";
 
 export const mintStock = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const subclient = redisPubSubManager
     await redisPubSubManager.ensureRedisConnection()
 
     const price = 1000
@@ -32,14 +32,19 @@ export const mintStock = async (req: Request, res: Response, next: NextFunction)
       id
     });
 
+
+    const promisData = handlePubSubWithTimeout(id, 5000)
+
     await redisClient?.lPush("req", data);
 
+    const resData = await promisData
 
-    await subclient.listenForMessages(id, (message) => {
-      res.status(200).json(
-        message
-      )
+    res.json({
+      ...resData
     })
+
+
+
   } catch (error) {
     next(error);
   }

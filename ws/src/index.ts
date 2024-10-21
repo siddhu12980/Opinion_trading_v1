@@ -27,7 +27,7 @@ export async function startWebSocketServer(port: number) {
       await redisPubSubManager.listenForMessages(stockSymbol, (message) => {
         broadcastToSubscribers(stockSymbol, message);
       });
-      console.log(`Set up Redis listener for stock: ${stockSymbol}`);
+      console.log(` Redis listener for stock: ${stockSymbol}`);
     }
   };
 

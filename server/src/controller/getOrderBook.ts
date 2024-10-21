@@ -3,12 +3,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { redisPubSubManager } from "../helper/manager";
 import { reqTypes } from "../constants/const";
 import { reconnectRedis, redisClient } from "../constants/client";
+import { handlePubSubWithTimeout } from "./balanceController";
 
 export const getOrderbook = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const subclient = redisPubSubManager
     await redisPubSubManager.ensureRedisConnection()
-
 
     const stockSymbol = req.params.stockSymbol;
 
@@ -24,13 +23,16 @@ export const getOrderbook = async (req: Request, res: Response, next: NextFuncti
       id
     });
 
+    const promisData = handlePubSubWithTimeout(id, 5000)
+
     await redisClient?.lPush("req", data);
 
-    await subclient.listenForMessages(id, (message) => {
-      res.status(200).json(
-        message
-      )
+    const resData = await promisData
+
+    res.json({
+      ...resData
     })
+
 
   } catch (error) {
     next(error);
@@ -42,7 +44,6 @@ export const getOrderbook = async (req: Request, res: Response, next: NextFuncti
 
 export const getAllOrderbook = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const subclient = redisPubSubManager
     await redisPubSubManager.ensureRedisConnection()
 
 
@@ -57,13 +58,18 @@ export const getAllOrderbook = async (req: Request, res: Response, next: NextFun
       id
     });
 
+    const promisData = handlePubSubWithTimeout(id, 5000)
+
     await redisClient?.lPush("req", data);
 
-    await subclient.listenForMessages(id, (message) => {
-      res.status(200).json(
-        message
-      )
+    const resData = await promisData
+
+    res.json({
+      ...resData
     })
+
+
+
 
 
   } catch (error) {

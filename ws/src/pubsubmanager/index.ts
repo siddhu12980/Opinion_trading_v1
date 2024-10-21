@@ -3,8 +3,7 @@ import { createClient } from "redis"
 type RedisClient = ReturnType<typeof createClient>;
 let redisClient: RedisClient | null = null;
 export async function createConnectRedis(): Promise<void> {
-  const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379'; // Default to localhost if REDIS_URL is not set
-
+  const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379'; 
 const client = await createClient({ url: redisUrl });
 
 

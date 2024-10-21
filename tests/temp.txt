@@ -1,61 +1,34 @@
-
 import { WebSocketServer, WebSocket } from 'ws';
-const subscriptions: Map<string, Set<WebSocket>> = new Map();
+import { redisPubSubManager } from "./pubsubmanager/manager";
 
-export function startWebSocketServer(port: number) {
+export async function startWebSocketServer(port) {
   const wss = new WebSocketServer({ port }, () => {
     console.log(`WebSocket server is listening on port ${port}`);
   });
 
-  wss.on('connection', (ws: WebSocket) => {
+  wss.on('connection', (ws) => {
+    ws.on('message', async (data) => {
+      try {
+        const parsedData = JSON.parse(data);
+        const stockSymbol = parsedData.stockSymbol;
 
-
-    ws.on('message', (message: string) => {
-      const data = JSON.parse(message);
-      const stockSymbol = data.stockSymbol;
-
-      // Add the client (WebSocket) to the subscription list for this stockSymbol
-      if (!subscriptions.has(stockSymbol)) {
-        subscriptions.set(stockSymbol, new Set());
-      }
-
-      const stockSet = subscriptions.get(stockSymbol);
-      console.log(`Before adding: ${stockSymbol} has ${stockSet?.size || 0} clients`);
-
-      stockSet?.add(ws);
-
-      console.log(`After adding: ${stockSymbol} has ${stockSet?.size || 0} clients`);
-    });
-    ws.on('close', () => {
-      console.log('WebSocket connection closed for client');
-      subscriptions.forEach((clients, stockSymbol) => {
-        clients.delete(ws);
-        if (clients.size === 0) {
-          subscriptions.delete(stockSymbol);
+        if (stockSymbol) {
+          await redisPubSubManager.subscribe(stockSymbol, (message) => {
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ stockSymbol, message }));
+            }
+          });
+          console.log(`Client subscribed to stock: ${stockSymbol}`);
         }
-      });
+      } catch (error) {
+        console.error("Error processing WebSocket message:", error);
+      }
     });
 
-    ws.on('error', (error) => {
-      console.error('WebSocket error:', error);
+    ws.on('close', () => {
+      console.log('Client disconnected');
+      // Optionally handle cleanup logic on close
+      // You might want to unsubscribe the client from all stocks they were subscribed to
     });
   });
-}
-
-
-export function broadcastOrderBookUpdate(stockSymbol: string, update: any) {
-  console.log("inside broadcast")
-  const clients = subscriptions.get(stockSymbol);
-  console.log(`Broadcasting update to ${clients?.size || 0} clients for stock ${stockSymbol}`);
-
-  if (clients) {
-    clients.forEach((client) => {
-      try {
-        console.log("Sending update to client:", update);
-        client.send(JSON.stringify(update));
-      } catch (error) {
-        console.error("Failed to send message to client:", error);
-      }
-    });
-  }
 }

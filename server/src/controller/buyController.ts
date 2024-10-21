@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { redisPubSubManager } from "../helper/manager";
 import { reqTypes } from "../constants/const";
 import { reconnectRedis, redisClient } from "../constants/client";
+import { handlePubSubWithTimeout } from "./balanceController";
 
 
 export const buyOrder = (req: Request, res: Response) => {
@@ -23,7 +24,6 @@ export const buyOrder = (req: Request, res: Response) => {
 
 const buyYesorder = async (userId: string, stockSymbol: string, quantity: number, price: number, res: Response) => {
   try {
-    const subclient = redisPubSubManager
     await redisPubSubManager.ensureRedisConnection()
 
 
@@ -36,7 +36,7 @@ const buyYesorder = async (userId: string, stockSymbol: string, quantity: number
 
     const id = uuidv4();
 
-    const message = {
+    const message = JSON.stringify({
       message: "Order placed successfully",
       "req": reqTypes.buyYesorder, userId,
       stockSymbol,
@@ -44,14 +44,18 @@ const buyYesorder = async (userId: string, stockSymbol: string, quantity: number
       price,
       id
     }
+    )
 
-    redisClient?.lPush("req", JSON.stringify(message))
 
-    await subclient.listenForMessages(id, (message) => {
-      res.status(200).json(
-        message
-      )
+    const promisData = handlePubSubWithTimeout(id, 5000)
+    await redisClient?.lPush("req", message);
+    const resData = await promisData
+
+    res.json({
+      ...resData
     })
+
+
   } catch (error: any) {
     console.error("Error placing the order:", error);
     res.status(500).json({ message: "An error occurred while placing the order", error: error.message });
@@ -62,7 +66,6 @@ const buyYesorder = async (userId: string, stockSymbol: string, quantity: number
 
 const buyNoorder = async (userId: string, stockSymbol: string, quantity: number, price: number, res: Response) => {
   try {
-    const subclient = redisPubSubManager
     await redisPubSubManager.ensureRedisConnection()
 
 
@@ -75,7 +78,7 @@ const buyNoorder = async (userId: string, stockSymbol: string, quantity: number,
 
     const id = uuidv4()
 
-    const message = {
+    const message = JSON.stringify({
       id,
       userId,
       stockSymbol,
@@ -84,15 +87,18 @@ const buyNoorder = async (userId: string, stockSymbol: string, quantity: number,
       req: reqTypes.buyNoorder,
       message: "Buy Order Queue successfully",
     }
+    )
 
+    const promisData = handlePubSubWithTimeout(id, 5000)
 
-    redisClient?.lPush("req", JSON.stringify(message))
+    await redisClient?.lPush("req", message);
+    const resData = await promisData
 
-    await subclient.listenForMessages(id, (message) => {
-      res.status(200).json(
-        message
-      )
+    res.json({
+      ...resData
     })
+
+
 
   } catch (error: any) {
     console.error("Error placing the order:", error);
