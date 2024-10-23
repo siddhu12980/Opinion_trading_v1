@@ -37,22 +37,40 @@ func main() {
 
 	// fmt.Printf("\n \n")
 
-	res5, err5 := controller.CreateSymbol("NEW")
+	// res5, err5 := controller.CreateSymbol("NEW")
 
-	HandleRes(res5, err5)
+	// HandleRes(res5, err5)
+
+	// fmt.Printf("\n \n")
+
+	// res6, err6 := controller.GetOrderbook("BTC")
+
+	// HandleRes(res6, err6)
+
+	// fmt.Printf("\n \n")
+
+	// res7, err7 := controller.GetAllOrderbook()
+
+	// fmt.Printf("\n \n")
+
+	// HandleRes(res7, err7)
+
+	// res8, err8 := controller.MintStock("user1", "BTC", 10, 10)
+
+	// fmt.Printf("\n \n")
+
+	// HandleRes(res8, err8)
+
+	// res9, err9 := controller.Onramp("user1", 10000)
+
+	// fmt.Printf("\n \n")
+
+	// HandleRes(res9, err9)
+
+	res10, err10 := controller.Reset()
 
 	fmt.Printf("\n \n")
 
-	res6, err6 := controller.GetOrderbook("BTC")
-
-	HandleRes(res6, err6)
-
-	fmt.Printf("\n \n")
-
-	res7, err7 := controller.GetAllOrderbook()
-
-	fmt.Printf("\n \n")
-
-	HandleRes(res7, err7)
+	HandleRes(res10, err10)
 
 }
