@@ -38,13 +38,16 @@ const buyYesorder = async (userId: string, stockSymbol: string, quantity: number
 
     const message = JSON.stringify({
       message: "Order placed successfully",
-      "req": reqTypes.buyYesorder, userId,
+      "req": reqTypes.buyYesorder,
+      userId,
       stockSymbol,
       quantity,
       price,
       id
     }
     )
+
+    console.log(message)
 
 
     const promisData = handlePubSubWithTimeout(id, 5000)

@@ -13,6 +13,8 @@ export async function onrampINR(req: Request, res: Response, next: NextFunction)
     if (!redisClient?.isOpen) {
       await reconnectRedis()
     }
+
+
     const { userId, amount } = req.body;
     if (!userId || !amount) {
       res.status(400).json({ message: "Invalid request body" });
@@ -25,6 +27,7 @@ export async function onrampINR(req: Request, res: Response, next: NextFunction)
       id,
     };
 
+    console.log(queueMessage)
 
     const promisData = handlePubSubWithTimeout(id, 5000)
 

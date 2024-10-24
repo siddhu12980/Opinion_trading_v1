@@ -24,7 +24,8 @@ export const createUser = async (req: Request, res: Response, next: NextFunction
     const data = JSON.stringify({
       req: reqTypes.createUser,
       id,
-      user
+      userId: user
+
     })
 
 

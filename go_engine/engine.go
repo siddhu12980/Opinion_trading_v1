@@ -1,76 +1,205 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"engine/controller"
+	typess "engine/types"
 	"fmt"
+	"log"
+
+	"github.com/redis/go-redis/v9"
 )
 
-func HandleRes(res string, err error) {
+type ReqType int
+
+const (
+	_                  ReqType = iota
+	GetStockBalance            // 0
+	GetINRBalance              // 1
+	GetAllINRBalance           // 2
+	BuyNoOrder                 // 3
+	BuyYesOrder                // 4
+	GetAllStockBalance         // 5
+	CreateSymbol               // 6
+	GetOrderbook               // 7
+	GetAllOrderbook            // 8
+	MintStock                  // 9
+	OnRampINR                  // 10
+	Reset                      // 11
+	SellOrder                  // 12
+	CreateUser                 // 13
+)
+
+func handleReq(reqType ReqType, msg Message) {
+	switch reqType {
+	case GetStockBalance:
+
+		fmt.Println("Processing: GetStockBalance")
+
+		res, err := controller.GetStockBalance(msg.UserID)
+
+		HandleRes(res, err, msg.ID)
+
+	case GetINRBalance:
+		fmt.Println("Processing: GetINRBalance")
+		res, err := controller.GetINRBalance(msg.UserID)
+		HandleRes(res, err, msg.ID)
+
+	case GetAllINRBalance:
+		fmt.Println("Processing: GetAllINRBalance")
+		res, err := controller.GetAllINRBalance()
+		HandleRes(res, err, msg.ID)
+
+	case BuyNoOrder:
+		fmt.Println("Processing: BuyNoOrder")
+		res, err := controller.BuyNoOrder(msg.UserID, msg.StockSymbol, int32(msg.Quantity), int32(msg.Price))
+		HandleRes(res, err, msg.ID)
+
+	case BuyYesOrder:
+		fmt.Println("Processing: BuyYesOrder")
+		res, err := controller.BuyYesOrder(msg.UserID, msg.StockSymbol, int32(msg.Quantity), int32(msg.Price))
+		HandleRes(res, err, msg.ID)
+
+	case GetAllStockBalance:
+		fmt.Println("Processing: GetAllStockBalance")
+		res, err := controller.GetAllStockBalance()
+		HandleRes(res, err, msg.ID)
+
+	case CreateSymbol:
+		fmt.Println("Processing: CreateSymbol")
+		res, err := controller.CreateSymbol(msg.StockSymbol)
+		HandleRes(res, err, msg.ID)
+
+	case GetOrderbook:
+		fmt.Println("Processing: GetOrderbook")
+		res, err := controller.GetOrderbook(msg.StockSymbol)
+		HandleRes(res, err, msg.ID)
+
+	case GetAllOrderbook:
+		fmt.Println("Processing: GetAllOrderbook")
+		res, err := controller.GetAllOrderbook()
+		HandleRes(res, err, msg.ID)
+
+	case MintStock:
+		fmt.Println("Processing: MintStock")
+		res, err := controller.MintStock(msg.UserID, msg.StockSymbol, int32(msg.Quantity), int32(msg.Price))
+		HandleRes(res, err, msg.ID)
+
+	case OnRampINR:
+		fmt.Println("Processing: OnRampINR")
+		res, err := controller.Onramp(msg.UserID, int32(msg.Amount))
+		HandleRes(res, err, msg.ID)
+
+	case Reset:
+		fmt.Println("Processing: Reset")
+		res, err := controller.Reset()
+		HandleRes(res, err, msg.ID)
+
+	case SellOrder:
+		fmt.Println("Processing: SellOrder")
+		res, err := controller.SellOrder(msg.UserID, msg.StockSymbol, int32(msg.Quantity), int32(msg.Price), msg.StockType)
+		HandleRes(res, err, msg.ID)
+
+	case CreateUser:
+		fmt.Println("Processing: CreateUser", msg)
+
+		res, err := controller.CreateUser(msg.UserID)
+		HandleRes(res, err, msg.ID)
+
+	default:
+		fmt.Println("Unknown Request Type")
+	}
+}
+
+func HandleRes(res string, err error, id string) {
+
+	opt, redis_err := redis.ParseURL("redis://localhost:6379")
+
+	if redis_err != nil {
+		panic(redis_err)
+	}
+
+	if id == "" {
+		panic("NO ID Provided")
+	}
+
+	client := redis.NewClient(opt)
+	ctx := context.Background()
+
 	if err != nil {
 		fmt.Print(err)
 	}
+
 	fmt.Print(res)
+
+	data := client.Publish(ctx, id, res)
+
+	fmt.Print(data.Result())
+
+}
+
+type Message struct {
+	ID          string                `json:"id"`               // Required
+	Req         int                   `json:"req"`              // Required
+	UserID      string                `json:"userId,omitempty"` // Optional, empty string if missing
+	StockSymbol string                `json:"stockSymbol,omitempty"`
+	Quantity    int                   `json:"quantity,omitempty"`
+	Price       int                   `json:"price,omitempty"`
+	Message     string                `json:"message,omitempty"`
+	Amount      int                   `json:"amount,omitempty"`
+	StockType   typess.OrderTypeYesNo `json:"stockType,omitempty"`
 }
 
 func main() {
 
-	// res, err := controller.GetINRBalance("user122")
+	opt, redis_err := redis.ParseURL("redis://localhost:6379")
 
-	// HandleRes(res, err)
+	if redis_err != nil {
+		panic(redis_err)
+	}
 
-	// fmt.Printf("\n")
+	client := redis.NewClient(opt)
 
-	// res2, err2 := controller.GetStockBalance("user1")
+	ctx := context.Background()
 
-	// HandleRes(res2, err2)
+	for true {
 
-	// fmt.Printf("\n")
-	// res3, err3 := controller.GetAllINRBalance()
+		req_data := client.BRPop(ctx, 0, "req")
 
-	// HandleRes(res3, err3)
+		data, err := req_data.Result()
+		if err != nil {
+			fmt.Println("Error fetching from Redis:", err)
+			return
+		}
 
-	// fmt.Printf("\n")
+		jsonStr := data[1]
 
-	// res4, err4 := controller.GetAllStockBalance()
+		data1 := []byte(jsonStr)
 
-	// HandleRes(res4, err4)
+		var msg Message
 
-	// fmt.Printf("\n \n")
+		fmt.Print("JSon String", jsonStr)
 
-	// res5, err5 := controller.CreateSymbol("NEW")
+		err = json.Unmarshal(data1, &msg)
 
-	// HandleRes(res5, err5)
+		if err != nil {
+			fmt.Println(" \n Error unmarshalling JSON:", err)
+			return
+		}
 
-	// fmt.Printf("\n \n")
+		if msg.ID == "" || msg.Req == 0 {
+			log.Println("Missing required fields: ID or Req")
+			return
+		}
 
-	// res6, err6 := controller.GetOrderbook("BTC")
+		fmt.Print(msg)
 
-	// HandleRes(res6, err6)
+		fmt.Println("ID:", msg.ID)
+		fmt.Println("Req:", msg.Req)
 
-	// fmt.Printf("\n \n")
+		handleReq(ReqType(msg.Req), msg)
 
-	// res7, err7 := controller.GetAllOrderbook()
-
-	// fmt.Printf("\n \n")
-
-	// HandleRes(res7, err7)
-
-	// res8, err8 := controller.MintStock("user1", "BTC", 10, 10)
-
-	// fmt.Printf("\n \n")
-
-	// HandleRes(res8, err8)
-
-	// res9, err9 := controller.Onramp("user1", 10000)
-
-	// fmt.Printf("\n \n")
-
-	// HandleRes(res9, err9)
-
-	res10, err10 := controller.Reset()
-
-	fmt.Printf("\n \n")
-
-	HandleRes(res10, err10)
+	}
 
 }

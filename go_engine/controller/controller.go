@@ -2,8 +2,10 @@ package controller
 
 import (
 	"encoding/json"
+	"engine/helper"
 	typess "engine/types"
 	"fmt"
+	"strconv"
 )
 
 func CreateJSONResponse(message string, data interface{}) (string, error) {
@@ -95,6 +97,14 @@ func GetAllOrderbook() (string, error) {
 }
 
 func MintStock(userId string, stockSymbol string, quantity int32, price int32) (string, error) {
+
+	if quantity <= 0 {
+		return CreateJSONResponse("Invalid quantity", nil)
+	}
+	if price <= 0 || price > 1000 {
+		return CreateJSONResponse("Invalid price", nil)
+	}
+
 	if user_balance, found := typess.INR_BALANCES[userId]; !found {
 		return CreateJSONResponse("User Not Found", nil)
 	} else {
@@ -109,6 +119,7 @@ func MintStock(userId string, stockSymbol string, quantity int32, price int32) (
 				Yes *typess.Stock `json:"yes,omitempty"`
 				No  *typess.Stock `json:"no,omitempty"`
 			}{}
+
 		}
 
 		user_stock := typess.STOCK_BALANCES[userId]
@@ -170,16 +181,19 @@ func MintStock(userId string, stockSymbol string, quantity int32, price int32) (
 }
 
 func Onramp(userId string, amount int32) (string, error) {
+	fmt.Print(typess.INR_BALANCES)
 	if user, found := typess.INR_BALANCES[userId]; !found {
 		return CreateJSONResponse("USer NOt Found", nil)
 	} else {
 		user.Balance += amount
+
 		typess.INR_BALANCES[userId] = user
 
 		message := fmt.Sprintf("Onramped %v with amout %v", userId, amount/100)
 
 		return CreateJSONResponse(message, typess.INR_BALANCES[userId])
 	}
+
 }
 
 func Reset() (string, error) {
@@ -197,20 +211,267 @@ func Reset() (string, error) {
 
 }
 
+func CreateUser(userId string) (string, error) {
 
-export function doCreateUser(user: string) {
-	INR_BALANCES[user] = {
-	  balance: 0,
-	  locked: 0
-	};
-  
-	STOCK_BALANCES[user] = {}
-  
-	const res = {
-	  INR_BALANCES: INR_BALANCES[user],
-	  STOCK_BALANCES: STOCK_BALANCES[user],
-	  message: "User Created "
+	fmt.Printf(" \n userrrrrrrrrrrrrrrrrrrrrr %v \n", userId)
+
+	if _, found := typess.INR_BALANCES[userId]; !found {
+		newUser := typess.UserBalance{
+			Balance: 0,
+			Locked:  0,
+		}
+
+		if typess.INR_BALANCES == nil {
+			typess.INR_BALANCES = make(map[string]typess.UserBalance)
+		}
+
+		typess.INR_BALANCES[userId] = newUser
+
+		if typess.STOCK_BALANCES == nil {
+			typess.STOCK_BALANCES = make(map[string]typess.UserStockBalances)
+		}
+
+		typess.STOCK_BALANCES[userId] = make(typess.UserStockBalances)
+
+		data := map[string]interface{}{
+			"Stock": typess.STOCK_BALANCES[userId],
+			"INR":   typess.INR_BALANCES[userId],
+		}
+
+		fmt.Print(typess.INR_BALANCES)
+
+		return CreateJSONResponse("User Created", data)
+	} else {
+		return CreateJSONResponse("User Already Exists", nil)
 	}
-	return res
-  
-  }
+}
+
+func SellOrder(userId string, stockSymbol string, quantity int32, price int32, stockType typess.OrderTypeYesNo) (string, error) {
+
+	if quantity <= 0 {
+		return CreateJSONResponse("Invalid quantity", nil)
+	}
+	if price <= 0 || price >= 1000 {
+		return CreateJSONResponse("Invalid price", nil)
+	}
+
+	userStockBalance, found := typess.STOCK_BALANCES[userId]
+	if !found {
+		return CreateJSONResponse("User Not Found", nil)
+	}
+
+	userStock, found := userStockBalance[stockSymbol]
+	if !found {
+		return CreateJSONResponse("User doesn't own the corresponding Stock", nil)
+	}
+
+	var stockBalance *typess.Stock
+	var outcome typess.Outcome
+	if stockType == typess.Yes {
+		if userStock.Yes == nil {
+			return CreateJSONResponse("User doesn't own any Yes-type stock", nil)
+		}
+		stockBalance = userStock.Yes
+	} else {
+		if userStock.No == nil {
+			return CreateJSONResponse("User doesn't own any No-type stock", nil)
+		}
+		stockBalance = userStock.No
+	}
+
+	if stockBalance.Quantity < quantity {
+		return CreateJSONResponse("Insufficient Stock Quantity", nil)
+	}
+
+	orderBook, found := typess.ORDER_BOOK[stockSymbol]
+	if !found {
+		typess.ORDER_BOOK[stockSymbol] = typess.OrderBookEntry{
+			Yes: make(typess.Outcome),
+			No:  make(typess.Outcome),
+		}
+		orderBook = typess.ORDER_BOOK[stockSymbol]
+	}
+
+	if stockType == typess.Yes {
+		if orderBook.Yes == nil {
+			orderBook.Yes = make(typess.Outcome)
+		}
+		outcome = orderBook.Yes
+	} else {
+		if orderBook.No == nil {
+			orderBook.No = make(typess.Outcome)
+		}
+		outcome = orderBook.No
+	}
+
+	priceStr := strconv.FormatInt(int64(price), 10)
+
+	if _, found := outcome[priceStr]; !found {
+		outcome[priceStr] = &typess.Order{
+			Total:  0,
+			Orders: make(map[string]typess.OrderTypes),
+		}
+	}
+
+	order := outcome[priceStr]
+
+	if _, found := order.Orders[userId]; !found {
+		order.Orders[userId] = typess.OrderTypes{
+			Normal:  int(quantity),
+			Inverse: 0,
+		}
+	} else {
+
+		orderTypes := order.Orders[userId]
+		orderTypes.Normal += int(quantity)
+		order.Orders[userId] = orderTypes
+
+	}
+	order.Total += int(quantity)
+
+	stockBalance.Quantity -= quantity
+	stockBalance.Locked += quantity
+
+	data := map[string]interface{}{
+		"StockBalance": typess.STOCK_BALANCES[userId],
+		"OrderBook":    typess.ORDER_BOOK[stockSymbol],
+	}
+
+	return CreateJSONResponse("Sell Order Placed", data)
+}
+
+func BuyNoOrder(userID string, stockSymbol string, quantity int32, price int32) (string, error) {
+
+	if quantity <= 0 {
+		return CreateJSONResponse("Invalid quantity", nil)
+	}
+	if price <= 0 || price >= 1000 {
+		return CreateJSONResponse("Invalid price", nil)
+	}
+
+	op := typess.OrderBookOperation{
+		UserID:      userID,
+		StockSymbol: stockSymbol,
+		Quantity:    quantity,
+		Price:       price,
+		InvPrice:    1000 - price,
+		PriceStr:    strconv.FormatInt(int64(price), 10),
+		InvPriceStr: strconv.FormatInt(int64(1000-price), 10),
+	}
+
+	userBalance, found := typess.INR_BALANCES[userID]
+	if !found {
+		return CreateJSONResponse("User not found", nil)
+	}
+	if userBalance.Balance < quantity*price {
+		return CreateJSONResponse("Insufficient funds", nil)
+	}
+
+	if err := helper.InitializeOrderBook(stockSymbol); err != nil {
+		return "", fmt.Errorf("failed to initialize order book: %v", err)
+	}
+
+	orderBook := typess.ORDER_BOOK[stockSymbol]
+	noOrders := orderBook.No
+	yesOrders := orderBook.Yes
+
+	result, err := ProcessNoOrder(op, noOrders, yesOrders, &userBalance)
+
+	if err != nil {
+		return "", fmt.Errorf("failed to process order: %v", err)
+	}
+
+	typess.INR_BALANCES[userID] = userBalance
+
+	data := map[string]interface{}{
+		"orderBook": typess.ORDER_BOOK[stockSymbol],
+		"stockBook": typess.STOCK_BALANCES[userID],
+		"note":      result.Note,
+	}
+
+	return CreateJSONResponse("Buy No Order Complete", data)
+}
+
+func BuyYesOrder(userID string, stockSymbol string, quantity int32, price int32) (string, error) {
+	if quantity <= 0 {
+		return CreateJSONResponse("Invalid quantity", nil)
+	}
+	if price <= 0 || price >= 1000 {
+		return CreateJSONResponse("Invalid price", nil)
+	}
+
+	op := typess.OrderBookOperation{
+		UserID:      userID,
+		StockSymbol: stockSymbol,
+		Quantity:    quantity,
+		Price:       price,
+		InvPrice:    1000 - price,
+		PriceStr:    strconv.FormatInt(int64(price), 10),
+		InvPriceStr: strconv.FormatInt(int64(1000-price), 10),
+	}
+
+	userBalance, found := typess.INR_BALANCES[userID]
+
+	if !found {
+		return CreateJSONResponse("User not found", nil)
+	}
+	if userBalance.Balance < quantity*price {
+		return CreateJSONResponse("Insufficient funds", nil)
+	}
+
+	if err := helper.InitializeOrderBook(stockSymbol); err != nil {
+		return "", fmt.Errorf("failed to initialize order book: %v", err)
+	}
+
+	orderBook := typess.ORDER_BOOK[stockSymbol]
+	noOrders := orderBook.No
+	yesOrders := orderBook.Yes
+
+	result, err := ProcessYesOrder(op, noOrders, yesOrders, &userBalance)
+
+	if err != nil {
+		return "", fmt.Errorf("failed to process order: %v", err)
+	}
+
+	typess.INR_BALANCES[userID] = userBalance
+
+	data := map[string]interface{}{
+		"orderBook": typess.ORDER_BOOK[stockSymbol],
+		"stockBook": typess.STOCK_BALANCES[userID],
+		"note":      result.Note,
+	}
+
+	return CreateJSONResponse("Buy No Order Complete", data)
+}
+
+func ProcessYesOrder(
+	op typess.OrderBookOperation,
+	noOrders typess.Outcome,
+	yesOrders typess.Outcome,
+	userBalance *typess.UserBalance,
+) (*typess.ProcessResult, error) {
+
+	existingOrders, hasMatchingOrders := yesOrders[op.PriceStr]
+
+	if !hasMatchingOrders {
+		return helper.CreateNewInverseOrder(op, noOrders, userBalance)
+	}
+
+	return helper.ProcessExistingOrders(op, existingOrders, yesOrders, yesOrders, userBalance)
+}
+
+func ProcessNoOrder(
+	op typess.OrderBookOperation,
+	noOrders typess.Outcome,
+	yesOrders typess.Outcome,
+	userBalance *typess.UserBalance,
+) (*typess.ProcessResult, error) {
+
+	existingOrders, hasMatchingOrders := noOrders[op.PriceStr]
+
+	if !hasMatchingOrders {
+		return helper.CreateNewInverseOrder(op, yesOrders, userBalance)
+	}
+
+	return helper.ProcessExistingOrders(op, existingOrders, noOrders, yesOrders, userBalance)
+}

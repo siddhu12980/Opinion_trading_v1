@@ -1,4 +1,5 @@
 export enum reqTypes {
+  "_",
   "getStockBalance",
   "getINRBalance",
   "getallINRBalance",
