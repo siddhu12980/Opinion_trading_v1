@@ -1,0 +1,34 @@
+import { WebSocketServer, WebSocket } from 'ws';
+import { redisPubSubManager } from "./pubsubmanager/manager";
+
+export async function startWebSocketServer(port) {
+  const wss = new WebSocketServer({ port }, () => {
+    console.log(`WebSocket server is listening on port ${port}`);
+  });
+
+  wss.on('connection', (ws) => {
+    ws.on('message', async (data) => {
+      try {
+        const parsedData = JSON.parse(data);
+        const stockSymbol = parsedData.stockSymbol;
+
+        if (stockSymbol) {
+          await redisPubSubManager.subscribe(stockSymbol, (message) => {
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ stockSymbol, message }));
+            }
+          });
+          console.log(`Client subscribed to stock: ${stockSymbol}`);
+        }
+      } catch (error) {
+        console.error("Error processing WebSocket message:", error);
+      }
+    });
+
+    ws.on('close', () => {
+      console.log('Client disconnected');
+      // Optionally handle cleanup logic on close
+      // You might want to unsubscribe the client from all stocks they were subscribed to
+    });
+  });
+}
