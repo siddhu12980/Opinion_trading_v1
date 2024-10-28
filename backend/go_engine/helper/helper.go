@@ -16,6 +16,180 @@ func ToggleStockType(stockType typess.OrderTypeYesNo) typess.OrderTypeYesNo {
 	}
 }
 
+func HandleSellTransfer(
+	seller2 string, //selling person on ui
+	seller string, //being sold to person on orderbook
+	stockSymbol string,
+	stockType typess.OrderTypeYesNo,
+	quantity int32,
+	price int32,
+	invPrice int32,
+) error {
+	fmt.Printf("Starting HandleSellTransfer - seller2: %s, seller: %s, stockSymbol: %s, stockType: %v, quantity: %d, price: %d\n",
+		seller2, seller, stockSymbol, stockType, quantity, price)
+
+	if quantity <= 0 {
+		fmt.Println("Error: Quantity must be positive")
+		return errors.New("quantity must be positive")
+	}
+
+	if price <= 0 {
+		fmt.Println("Error: Price must be positive")
+		return errors.New("price must be positive")
+	}
+
+	seller2Stocks, exists := typess.STOCK_BALANCES[seller2]
+
+	if !exists {
+		fmt.Printf("Error: Stock balance not found for seller2: %s\n", seller2)
+		return fmt.Errorf("seller2 stock balance not found")
+	}
+
+	if _, exists := seller2Stocks[stockSymbol]; !exists {
+		fmt.Printf("Error: seller2 %s does not have stock symbol %s\n", seller2, stockSymbol)
+		return fmt.Errorf("seller2 doesn't have the stock symbol %s", stockSymbol)
+	}
+
+	sellerStocks, exists := typess.STOCK_BALANCES[seller]
+	if !exists {
+		fmt.Printf("Error: Stock balance not found for seller: %s\n", seller)
+		return fmt.Errorf("seller stock balance not found")
+	}
+
+	if _, exists := sellerStocks[stockSymbol]; !exists {
+		fmt.Printf("Error: seller %s doesn't have stock symbol %s\n", seller, stockSymbol)
+		return fmt.Errorf("seller doesn't have stock symbol %s", stockSymbol)
+	}
+
+	fmt.Printf("Both seller and seller2 have the stock symbol %s, proceeding with transfer\n", stockSymbol)
+
+	var seller2Stock *typess.Stock
+
+	if stockType == typess.Yes {
+		seller2Stock = seller2Stocks[stockSymbol].Yes
+	} else if stockType == typess.NO {
+		seller2Stock = seller2Stocks[stockSymbol].No
+	} else {
+		fmt.Println("Error: Invalid stock type in HandleSellTransfer")
+		return errors.New("yes/no type mismatch in HandleSellTransfer")
+	}
+
+	var sellerStock *typess.Stock
+
+	if stockType == typess.Yes {
+		sellerStock = sellerStocks[stockSymbol].No
+	} else {
+		sellerStock = sellerStocks[stockSymbol].Yes
+	}
+
+	fmt.Printf("Pre-transfer - seller2Stock quantity: %d, sellerStock Loked: %d\n", seller2Stock.Quantity, sellerStock.Locked)
+
+	sellerStock.Locked -= quantity
+
+	seller2Stock.Quantity -= quantity
+
+	fmt.Printf("Post-transfer - seller2Stock quantity: %d, sellerStock Locked: %d\n", seller2Stock.Quantity, sellerStock.Locked)
+
+	seller2Balance := typess.INR_BALANCES[seller2]
+	sellerBalance := typess.INR_BALANCES[seller]
+
+	totalCostForSeller2 := quantity * price
+
+	totalCostForSeller := quantity * invPrice
+
+	fmt.Printf("Transaction details - totalCostForSeller: %d, totalCostForSeller2: %d\n", totalCostForSeller, totalCostForSeller2)
+
+	seller2Balance.Balance += totalCostForSeller2
+
+	sellerBalance.Balance += totalCostForSeller
+
+	typess.INR_BALANCES[seller2] = seller2Balance
+	typess.INR_BALANCES[seller] = sellerBalance
+
+	fmt.Printf("Updated Balances - seller balance: %v, seller2 balance: %v\n", sellerBalance, seller2Balance)
+	fmt.Printf("Final stock states - seller stock: %v, seller2 stock: %v\n", sellerStock, seller2Stock)
+
+	return nil
+}
+
+// func HandleSellTransfer(
+// 	seller2 string,
+// 	seller string,
+// 	stockSymbol string,
+// 	stockType typess.OrderTypeYesNo, //main Seller le bechi ra ko kun ho tyo
+// 	quantity int32,
+// 	price int32,
+// ) error {
+// 	if quantity <= 0 {
+// 		return errors.New("quantity must be positive")
+// 	}
+
+// 	if price <= 0 {
+// 		return errors.New("price must be positive")
+// 	}
+
+// 	seller2Stocks, exists := typess.STOCK_BALANCES[seller2]
+
+// 	if !exists {
+// 		return fmt.Errorf("seller2 stock balance not found")
+// 	}
+
+// 	if _, exists := seller2Stocks[stockSymbol]; !exists {
+// 		return fmt.Errorf("seller 2 dont have that stock Symbol")
+// 	}
+
+// 	sellerStocks, exists := typess.STOCK_BALANCES[seller]
+
+// 	if !exists {
+// 		return fmt.Errorf("seller Stock Balance Doesnot Exists")
+// 	}
+
+// 	if _, exists := sellerStocks[stockSymbol]; !exists {
+// 		return fmt.Errorf("seller Stock Balance Dont Have this Stock")
+// 	}
+
+// 	var seller2Stock *typess.Stock
+
+// 	if stockType == typess.Yes {
+// 		seller2Stock = seller2Stocks[stockSymbol].No
+// 	} else if stockType == typess.NO {
+// 		seller2Stock = seller2Stocks[stockSymbol].Yes
+// 	} else {
+// 		return errors.New("yes No not matched inside HandleStock Transfer ")
+// 	}
+
+// 	effectiveStockType := stockType
+
+// 	var sellerStock *typess.Stock
+
+// 	if effectiveStockType == typess.Yes {
+// 		sellerStock = sellerStocks[stockSymbol].Yes
+// 	} else {
+// 		sellerStock = sellerStocks[stockSymbol].No
+// 	}
+
+// 	sellerStock.Quantity -= quantity
+// 	seller2Stock.Quantity -= quantity
+
+// 	seller2Balance := typess.INR_BALANCES[seller2]
+// 	sellerBalance := typess.INR_BALANCES[seller]
+
+// 	totalCost_for_seller := quantity * price
+// 	totalCost_for_seller2 := quantity * (1000 - price)
+
+// 	seller2Balance.Balance += totalCost_for_seller2
+// 	sellerBalance.Balance += totalCost_for_seller
+
+// 	typess.INR_BALANCES[seller2] = seller2Balance
+// 	typess.INR_BALANCES[seller] = sellerBalance
+
+// 	fmt.Printf(" \n Seller1 Balance %v , %v \n Seller 2Balance %v \n", seller2Balance, typess.INR_BALANCES[seller2], sellerBalance)
+
+// 	fmt.Printf("\n Seller1 stock %v \n Seller2 stock %v \n", seller2Stock, sellerStock)
+
+// 	return nil
+// }
+
 func HandleStockTransfer(
 	buyer string,
 	seller string,

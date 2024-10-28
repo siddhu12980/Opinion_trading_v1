@@ -6,6 +6,7 @@ import (
 	"engine/helper"
 	typess "engine/types"
 	"fmt"
+	"math"
 	"strconv"
 
 	"github.com/redis/go-redis/v9"
@@ -238,6 +239,7 @@ func Reset() (string, error) {
 func CreateUser(userId string) (string, error) {
 
 	if _, found := typess.INR_BALANCES[userId]; !found {
+
 		newUser := typess.UserBalance{
 			Balance: 0,
 			Locked:  0,
@@ -269,49 +271,63 @@ func CreateUser(userId string) (string, error) {
 }
 
 func SellOrder(userId string, stockSymbol string, quantity int32, price int32, stockT typess.OrderTypeYesNo) (string, error) {
+	fmt.Printf("SellOrder called - User: %s, StockSymbol: %s, Quantity: %d, Price: %d, StockType: %v\n", userId, stockSymbol, quantity, price, stockT)
+
+	remainingQty := quantity
 
 	stockType := typess.OrderTypeYesNo(stockT)
 
 	if quantity <= 0 {
+		fmt.Println("Invalid quantity provided")
 		return CreateJSONResponse("Invalid quantity", nil)
 	}
 	if price <= 0 || price >= 1000 {
+		fmt.Println("Invalid price provided")
 		return CreateJSONResponse("Invalid price", nil)
 	}
 
 	userStockBalance, found := typess.STOCK_BALANCES[userId]
 	if !found {
+		fmt.Printf("User not found: %s\n", userId)
 		return CreateJSONResponse("User Not Found", nil)
 	}
 
 	userStock, found := userStockBalance[stockSymbol]
 	if !found {
+		fmt.Printf("User %s doesn't own stock: %s\n", userId, stockSymbol)
 		return CreateJSONResponse("User doesn't own the corresponding Stock", nil)
 	}
 
 	var stockBalance *typess.Stock
 	var outcome typess.Outcome
+	var oppOutcome typess.Outcome
 
 	if stockType == typess.Yes {
 		if userStock.Yes == nil {
+			fmt.Printf("User %s doesn't own any Yes-type stock\n", userId)
 			return CreateJSONResponse("User doesn't own any Yes-type stock", nil)
 		}
 		stockBalance = userStock.Yes
 	} else if stockType == typess.NO {
 		if userStock.No == nil {
+			fmt.Printf("User %s doesn't own any No-type stock\n", userId)
 			return CreateJSONResponse("User doesn't own any No-type stock", nil)
 		}
 		stockBalance = userStock.No
 	} else {
+		fmt.Println("Failed during type check")
 		return CreateJSONResponse("Failed during type check", nil)
 	}
 
 	if stockBalance.Quantity < quantity {
+		fmt.Printf("Insufficient Stock Quantity - User: %s, Available: %d, Required: %d\n", userId, stockBalance.Quantity, quantity)
 		return CreateJSONResponse("Insufficient Stock Quantity", nil)
 	}
 
 	orderBook, found := typess.ORDER_BOOK[stockSymbol]
 	if !found {
+		fmt.Printf("Order book for %s not found, creating a new entry\n", stockSymbol)
+
 		typess.ORDER_BOOK[stockSymbol] = typess.OrderBookEntry{
 			Yes: make(typess.Outcome),
 			No:  make(typess.Outcome),
@@ -324,51 +340,329 @@ func SellOrder(userId string, stockSymbol string, quantity int32, price int32, s
 			orderBook.Yes = make(typess.Outcome)
 		}
 		outcome = orderBook.Yes
+		oppOutcome = orderBook.No
 	} else {
 		if orderBook.No == nil {
 			orderBook.No = make(typess.Outcome)
 		}
 		outcome = orderBook.No
+		oppOutcome = orderBook.Yes
 	}
 
 	priceStr := strconv.FormatInt(int64(price), 10)
+	fmt.Printf("Processing order matching with oppOutcome. PriceStr:1000 - %s %v  %v %v\n ", (priceStr), oppOutcome, outcome, stockType)
 
-	if _, found := outcome[priceStr]; !found {
-		outcome[priceStr] = &typess.Order{
-			Total:  0,
-			Orders: make(map[string]typess.OrderTypes),
+	for keys, data := range oppOutcome {
+
+		fmt.Printf(" \n key :%v data: %v \n", keys, data)
+		check_price, err := strconv.Atoi(keys)
+		if err != nil {
+			fmt.Printf("Error parsing price in oppOutcome: %v\n", err)
+			panic(err)
+		}
+
+		fmt.Printf("\n  checkgin price for matching price in opposite %v %v , %v \n \n", check_price, price, check_price+int(price))
+
+		if (check_price + int(price)) <= 1000 {
+			fmt.Printf("Found matching price. Check Price: %d, Current Price: %d\n", check_price, price)
+
+			for seller1, availableQuantities := range data.Orders {
+				fmt.Printf("Checking seller %s, Available Normal Quantity: %d\n", seller1, availableQuantities.Normal)
+
+				if _, found := typess.STOCK_BALANCES[seller1]; !found {
+					return "", fmt.Errorf("seller1 %s not found in stock balances", seller1)
+				}
+
+				totalAvailable := int32(availableQuantities.Normal)
+
+				if totalAvailable <= 0 || availableQuantities.Normal <= 0 {
+					fmt.Print("Continue USed ")
+					continue
+				}
+
+				quantityToTake := int32(math.Min(float64(remainingQty), float64(totalAvailable)))
+				fmt.Printf("Processing transfer. Quantity to take: %d\n", quantityToTake)
+
+				fmt.Printf(" IT is working correctly q > 0 %v %v \n", availableQuantities.Normal, availableQuantities.Normal > 0)
+				if int32(availableQuantities.Normal) > 0 {
+					inversePrice, err := strconv.Atoi(keys)
+					if err != nil {
+						fmt.Printf("Failed to convert price str to int before transfer: %v\n", err)
+						return "", fmt.Errorf("failed to handle price conv: %v", err)
+					}
+
+					if err := helper.HandleSellTransfer(userId, seller1, stockSymbol, stockType, quantityToTake, price, int32(inversePrice)); err != nil {
+						fmt.Printf("Failed to handle normal transfer: %v\n", err)
+						return "", fmt.Errorf("failed to handle normal transfer: %v", err)
+					}
+
+					availableQuantities.Normal -= int(quantityToTake)
+					fmt.Printf("Updated available quantities after transfer - Normal: %d\n", availableQuantities.Normal)
+
+					data.Orders[seller1] = availableQuantities
+
+					fmt.Printf("Subtracting Start after matching %v quantity taken : %v", data, quantityToTake)
+					data.Total -= int(quantityToTake)
+					fmt.Printf("Subtracting Done after matching %v", data)
+
+					remainingQty -= quantityToTake
+
+				}
+
+				if availableQuantities.Inverse == 0 && availableQuantities.Normal == 0 {
+
+					delete(data.Orders, seller1)
+					fmt.Printf("Deleted seller %s from orders\n", seller1)
+
+					fmt.Printf(" \n Order List total : %v  %v\n", data, data.Orders)
+
+					if data.Total == 0 {
+						delete(oppOutcome, keys)
+						fmt.Printf("Deleted key %s from oppOutcome\n", keys)
+					}
+				} else {
+					fmt.Printf(" \n Updated remaining quantity after transaction - Remaining: %d total Remaning:%d \n", quantity, data.Total)
+				}
+
+				if remainingQty == 0 {
+					fmt.Println("Order fully matched and fulfilled doing Break")
+					break
+				}
+			}
+
 		}
 	}
 
-	order := outcome[priceStr]
-
-	if _, found := order.Orders[userId]; !found {
-		order.Orders[userId] = typess.OrderTypes{
-			Normal:  int(quantity),
-			Inverse: 0,
+	if remainingQty > 0 {
+		fmt.Printf(" After Loop ,Quantity remaining, adding order to outcome. Remaining Quantity: %d\n", remainingQty)
+		if _, found := outcome[priceStr]; !found {
+			outcome[priceStr] = &typess.Order{
+				Total:  0,
+				Orders: make(map[string]typess.OrderTypes),
+			}
 		}
+
+		order := outcome[priceStr]
+		if _, found := order.Orders[userId]; !found {
+			order.Orders[userId] = typess.OrderTypes{
+				Normal:  int(remainingQty),
+				Inverse: 0,
+			}
+		} else {
+			orderTypes := order.Orders[userId]
+			orderTypes.Normal += int(remainingQty)
+			order.Orders[userId] = orderTypes
+		}
+		order.Total += int(remainingQty)
+
+		stockBalance.Quantity -= remainingQty
+		stockBalance.Locked += remainingQty
+		fmt.Printf("After Loop, Order added to order book. Total: %d, Locked: %d\n", order.Total, stockBalance.Locked)
 	} else {
-
-		orderTypes := order.Orders[userId]
-		orderTypes.Normal += int(quantity)
-		order.Orders[userId] = orderTypes
-
+		fmt.Println("After Loop Quantity is Zero, order fully matched and removed")
 	}
-	order.Total += int(quantity)
-
-	stockBalance.Quantity -= quantity
-	stockBalance.Locked += quantity
 
 	data := map[string]interface{}{
 		"StockBalance": typess.STOCK_BALANCES[userId],
 		"OrderBook":    typess.ORDER_BOOK[stockSymbol],
 		"Balance":      typess.INR_BALANCES[userId],
 	}
-
 	go Publish(stockSymbol)
+	fmt.Println("Sell order placed successfully and published")
 
 	return CreateJSONResponse("Sell Order Placed", data)
 }
+
+// func SellOrder(userId string, stockSymbol string, quant int32, price int32, stockT typess.OrderTypeYesNo) (string, error) {
+
+// 	//need to implement matching and minting logic first lest do minting logic
+// 	//TODO minting
+
+// 	quantity := quant //dynamic quantity y
+
+// 	stockType := typess.OrderTypeYesNo(stockT)
+
+// 	if quantity <= 0 {
+// 		return CreateJSONResponse("Invalid quantity", nil)
+// 	}
+// 	if price <= 0 || price >= 1000 {
+// 		return CreateJSONResponse("Invalid price", nil)
+// 	}
+
+// 	userStockBalance, found := typess.STOCK_BALANCES[userId]
+// 	if !found {
+// 		return CreateJSONResponse("User Not Found", nil)
+// 	}
+
+// 	userStock, found := userStockBalance[stockSymbol]
+
+// 	if !found {
+// 		return CreateJSONResponse("User doesn't own the corresponding Stock", nil)
+// 	}
+
+// 	var stockBalance *typess.Stock
+
+// 	var outcome typess.Outcome // price : total + orders
+
+// 	var oppOutcome typess.Outcome
+
+// 	if stockType == typess.Yes {
+// 		if userStock.Yes == nil {
+// 			return CreateJSONResponse("User doesn't own any Yes-type stock", nil)
+// 		}
+// 		stockBalance = userStock.Yes
+// 	} else if stockType == typess.NO {
+// 		if userStock.No == nil {
+// 			return CreateJSONResponse("User doesn't own any No-type stock", nil)
+// 		}
+// 		stockBalance = userStock.No
+// 	} else {
+// 		return CreateJSONResponse("Failed during type check", nil)
+// 	}
+
+// 	if stockBalance.Quantity < quantity {
+// 		return CreateJSONResponse("Insufficient Stock Quantity", nil)
+// 	}
+
+// 	orderBook, found := typess.ORDER_BOOK[stockSymbol]
+// 	if !found {
+// 		typess.ORDER_BOOK[stockSymbol] = typess.OrderBookEntry{
+// 			Yes: make(typess.Outcome),
+// 			No:  make(typess.Outcome),
+// 		}
+// 		orderBook = typess.ORDER_BOOK[stockSymbol]
+// 	}
+
+// 	if stockType == typess.Yes {
+// 		if orderBook.Yes == nil {
+// 			orderBook.Yes = make(typess.Outcome)
+// 		}
+// 		outcome = orderBook.Yes
+// 		oppOutcome = orderBook.No
+// 	} else {
+// 		if orderBook.No == nil {
+// 			orderBook.No = make(typess.Outcome)
+// 		}
+// 		outcome = orderBook.No
+// 		oppOutcome = orderBook.Yes
+// 	}
+
+// 	priceStr := strconv.FormatInt(int64(price), 10)
+
+// 	for keys, data := range oppOutcome {
+
+// 		check_price, err := strconv.Atoi(keys)
+// 		if err != nil {
+// 			panic(err)
+// 		}
+
+// 		if (check_price + int(price)) <= 10 {
+// 			//do imting
+// 			//handle stock tranfers
+
+// 			remainingQuantity := quantity
+
+// 			for seller1, availableQuantities := range data.Orders {
+
+// 				if _, found := typess.STOCK_BALANCES[seller1]; !found {
+// 					return "", fmt.Errorf("seller1 %s not found in stock balances", seller1)
+// 				}
+
+// 				totalAvailable := int32(availableQuantities.Normal)
+
+// 				if totalAvailable <= 0 {
+// 					continue
+// 				}
+
+// 				quantityToTake := int32(math.Min(float64(remainingQuantity), float64(totalAvailable)))
+
+// 				fmt.Printf(" \n Quantity %v %v  ", quantityToTake, availableQuantities.Normal)
+
+// 				if int32(availableQuantities.Normal) > 0 {
+
+// 					if err := helper.HandleSellTransfer(userId, seller1, stockSymbol, stockType, quantityToTake, price); err != nil {
+
+// 						return "", fmt.Errorf("failed to handle normal transfer: %v", err)
+// 					}
+// 					availableQuantities.Normal -= int(quantityToTake)
+
+// 					fmt.Printf("Available Quantitis after seller transfer %v", availableQuantities.Normal)
+
+// 					remainingAfterNormal := quantityToTake - int32(availableQuantities.Normal)
+
+// 					availableQuantities.Normal = int(remainingAfterNormal)
+
+// 					data.Orders[seller1] = availableQuantities
+
+// 				}
+
+// 				if availableQuantities.Inverse == 0 && availableQuantities.Normal == 0 {
+// 					quantity = 0
+// 					delete(data.Orders, seller1)
+
+// 					if data.Total == 0 {
+// 						delete(oppOutcome, keys)
+// 					}
+
+// 				} else {
+// 					quantity -= quantityToTake
+// 					data.Total -= int(quantityToTake)
+// 				}
+
+// 				remainingQuantity -= quantityToTake
+
+// 				if remainingQuantity == 0 {
+// 					quantity = 0
+// 					break
+// 				}
+// 			}
+
+// 		}
+// 		//check if it zero
+
+// 	}
+
+// 	if quantity > 0 {
+
+// 		if _, found := outcome[priceStr]; !found {
+// 			outcome[priceStr] = &typess.Order{
+// 				Total:  0,
+// 				Orders: make(map[string]typess.OrderTypes),
+// 			}
+// 		}
+
+// 		order := outcome[priceStr]
+
+// 		if _, found := order.Orders[userId]; !found {
+// 			order.Orders[userId] = typess.OrderTypes{
+// 				Normal:  int(quantity),
+// 				Inverse: 0,
+// 			}
+// 		} else {
+
+// 			orderTypes := order.Orders[userId]
+// 			orderTypes.Normal += int(quantity)
+// 			order.Orders[userId] = orderTypes
+
+// 		}
+// 		order.Total += int(quantity)
+
+// 		stockBalance.Quantity -= quantity
+// 		stockBalance.Locked += quantity
+// 	} else {
+// 		fmt.Print("Quantity is Zero")
+// 	}
+
+// 	data := map[string]interface{}{
+// 		"StockBalance": typess.STOCK_BALANCES[userId],
+// 		"OrderBook":    typess.ORDER_BOOK[stockSymbol],
+// 		"Balance":      typess.INR_BALANCES[userId],
+// 	}
+
+// 	go Publish(stockSymbol)
+
+// 	return CreateJSONResponse("Sell Order Placed", data)
+// }
 
 func BuyNoOrder(userID string, stockSymbol string, quantity int32, price int32) (string, error) {
 

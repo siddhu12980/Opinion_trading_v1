@@ -128,7 +128,7 @@ func HandleRes(res string, err error, id string, ctx context.Context) {
 		log.Printf("Error: %v", err)
 	}
 
-	log.Printf("Sending Response: %v", res)
+	log.Printf("Sending Response: %v \n \n \n", res)
 	if err := client.Publish(ctx, id, res).Err(); err != nil {
 		log.Printf("Failed to publish response: %v", err)
 	}
@@ -180,7 +180,7 @@ func main() {
 			continue
 		}
 
-		log.Printf("Received Message: %+v", msg)
+		log.Printf("\n \n \n Received Message: %+v", msg)
 		msgCh <- msg // Send message to worker goroutines
 	}
 }
