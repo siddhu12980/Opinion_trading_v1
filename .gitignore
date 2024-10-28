@@ -1,3 +1,7 @@
 ./frontend/node_modules/*
 */node_modules
 ./backend/node_modules/*
+./backend/ws/node_modules/*
+./backend/tests/node_modules/*
+./backend/engine/node_modules/*
+./backend/server/node_modules/*
