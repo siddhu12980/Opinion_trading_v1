@@ -175,7 +175,7 @@ func main() {
 
 	msgCh := make(chan Message)
 
-	for i := 0; i < 4; i++ {
+	for i := 0; i < 10; i++ {
 		go worker(ctx, msgCh)
 	}
 
