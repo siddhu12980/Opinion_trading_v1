@@ -6,20 +6,42 @@ import (
 	"engine/helper"
 	typess "engine/types"
 	"fmt"
+	"log"
 	"math"
+	"os"
 	"strconv"
 
 	"github.com/redis/go-redis/v9"
 )
 
+func ENVVariable(key string) (string, error) {
+
+	data := os.Getenv(key)
+
+	if data == "" {
+		return "", fmt.Errorf("ENv Key not foun")
+	}
+
+	return data, nil
+
+}
+
 func Publish(stockSymbol string) {
-	opt, redis_err := redis.ParseURL("redis://localhost:6379")
+
+	url, err := ENVVariable("REDIS_URL")
+
+	if err != nil {
+		log.Fatalf("Could not parse Redis URL: %v", err)
+	}
+
+	opt, redis_err := redis.ParseURL(url)
+
 	if redis_err != nil {
-		fmt.Printf("Error parsing Redis URL: %v\n", redis_err)
+		log.Printf("Error parsing Redis URL: %v\n", redis_err)
 		return
 	}
 
-	fmt.Printf("Publishing to stock %s\n", stockSymbol)
+	log.Printf("Publishing to stock %s\n", stockSymbol)
 	client := redis.NewClient(opt)
 	ctx := context.Background()
 
@@ -29,7 +51,7 @@ func Publish(stockSymbol string) {
 	jsonString := string(jsonData)
 
 	if err := client.Publish(ctx, stockSymbol, jsonString).Err(); err != nil {
-		fmt.Printf("Failed to publish to Redis: %v\n", err)
+		log.Printf("Failed to publish to Redis: %v\n", err)
 	}
 }
 
@@ -206,7 +228,7 @@ func MintStock(userId string, stockSymbol string, quantity int32, price int32) (
 }
 
 func Onramp(userId string, amount int32) (string, error) {
-	fmt.Print(typess.INR_BALANCES)
+	log.Print(typess.INR_BALANCES)
 	if user, found := typess.INR_BALANCES[userId]; !found {
 		return CreateJSONResponse("USer NOt Found", nil)
 	} else {
@@ -262,7 +284,7 @@ func CreateUser(userId string) (string, error) {
 			"INR":   typess.INR_BALANCES[userId],
 		}
 
-		fmt.Print(typess.INR_BALANCES)
+		log.Print(typess.INR_BALANCES)
 
 		return CreateJSONResponse("User Created", data)
 	} else {
@@ -271,30 +293,30 @@ func CreateUser(userId string) (string, error) {
 }
 
 func SellOrder(userId string, stockSymbol string, quantity int32, price int32, stockT typess.OrderTypeYesNo) (string, error) {
-	fmt.Printf("SellOrder called - User: %s, StockSymbol: %s, Quantity: %d, Price: %d, StockType: %v\n", userId, stockSymbol, quantity, price, stockT)
+	log.Printf("SellOrder called - User: %s, StockSymbol: %s, Quantity: %d, Price: %d, StockType: %v\n", userId, stockSymbol, quantity, price, stockT)
 
 	remainingQty := quantity
 
 	stockType := typess.OrderTypeYesNo(stockT)
 
 	if quantity <= 0 {
-		fmt.Println("Invalid quantity provided")
+		log.Println("Invalid quantity provided")
 		return CreateJSONResponse("Invalid quantity", nil)
 	}
 	if price <= 0 || price >= 1000 {
-		fmt.Println("Invalid price provided")
+		log.Println("Invalid price provided")
 		return CreateJSONResponse("Invalid price", nil)
 	}
 
 	userStockBalance, found := typess.STOCK_BALANCES[userId]
 	if !found {
-		fmt.Printf("User not found: %s\n", userId)
+		log.Printf("User not found: %s\n", userId)
 		return CreateJSONResponse("User Not Found", nil)
 	}
 
 	userStock, found := userStockBalance[stockSymbol]
 	if !found {
-		fmt.Printf("User %s doesn't own stock: %s\n", userId, stockSymbol)
+		log.Printf("User %s doesn't own stock: %s\n", userId, stockSymbol)
 		return CreateJSONResponse("User doesn't own the corresponding Stock", nil)
 	}
 
@@ -304,29 +326,29 @@ func SellOrder(userId string, stockSymbol string, quantity int32, price int32, s
 
 	if stockType == typess.Yes {
 		if userStock.Yes == nil {
-			fmt.Printf("User %s doesn't own any Yes-type stock\n", userId)
+			log.Printf("User %s doesn't own any Yes-type stock\n", userId)
 			return CreateJSONResponse("User doesn't own any Yes-type stock", nil)
 		}
 		stockBalance = userStock.Yes
 	} else if stockType == typess.NO {
 		if userStock.No == nil {
-			fmt.Printf("User %s doesn't own any No-type stock\n", userId)
+			log.Printf("User %s doesn't own any No-type stock\n", userId)
 			return CreateJSONResponse("User doesn't own any No-type stock", nil)
 		}
 		stockBalance = userStock.No
 	} else {
-		fmt.Println("Failed during type check")
+		log.Println("Failed during type check")
 		return CreateJSONResponse("Failed during type check", nil)
 	}
 
 	if stockBalance.Quantity < quantity {
-		fmt.Printf("Insufficient Stock Quantity - User: %s, Available: %d, Required: %d\n", userId, stockBalance.Quantity, quantity)
+		log.Printf("Insufficient Stock Quantity - User: %s, Available: %d, Required: %d\n", userId, stockBalance.Quantity, quantity)
 		return CreateJSONResponse("Insufficient Stock Quantity", nil)
 	}
 
 	orderBook, found := typess.ORDER_BOOK[stockSymbol]
 	if !found {
-		fmt.Printf("Order book for %s not found, creating a new entry\n", stockSymbol)
+		log.Printf("Order book for %s not found, creating a new entry\n", stockSymbol)
 
 		typess.ORDER_BOOK[stockSymbol] = typess.OrderBookEntry{
 			Yes: make(typess.Outcome),
@@ -350,24 +372,24 @@ func SellOrder(userId string, stockSymbol string, quantity int32, price int32, s
 	}
 
 	priceStr := strconv.FormatInt(int64(price), 10)
-	fmt.Printf("Processing order matching with oppOutcome. PriceStr:1000 - %s %v  %v %v\n ", (priceStr), oppOutcome, outcome, stockType)
+	log.Printf("Processing order matching with oppOutcome. PriceStr:1000 - %s %v  %v %v\n ", (priceStr), oppOutcome, outcome, stockType)
 
 	for keys, data := range oppOutcome {
 
-		fmt.Printf(" \n key :%v data: %v \n", keys, data)
+		log.Printf(" \n key :%v data: %v \n", keys, data)
 		check_price, err := strconv.Atoi(keys)
 		if err != nil {
-			fmt.Printf("Error parsing price in oppOutcome: %v\n", err)
+			log.Printf("Error parsing price in oppOutcome: %v\n", err)
 			panic(err)
 		}
 
-		fmt.Printf("\n  checkgin price for matching price in opposite %v %v , %v \n \n", check_price, price, check_price+int(price))
+		log.Printf("\n  checkgin price for matching price in opposite %v %v , %v \n \n", check_price, price, check_price+int(price))
 
 		if (check_price + int(price)) <= 1000 {
-			fmt.Printf("Found matching price. Check Price: %d, Current Price: %d\n", check_price, price)
+			log.Printf("Found matching price. Check Price: %d, Current Price: %d\n", check_price, price)
 
 			for seller1, availableQuantities := range data.Orders {
-				fmt.Printf("Checking seller %s, Available Normal Quantity: %d\n", seller1, availableQuantities.Normal)
+				log.Printf("Checking seller %s, Available Normal Quantity: %d\n", seller1, availableQuantities.Normal)
 
 				if _, found := typess.STOCK_BALANCES[seller1]; !found {
 					return "", fmt.Errorf("seller1 %s not found in stock balances", seller1)
@@ -376,34 +398,34 @@ func SellOrder(userId string, stockSymbol string, quantity int32, price int32, s
 				totalAvailable := int32(availableQuantities.Normal)
 
 				if totalAvailable <= 0 || availableQuantities.Normal <= 0 {
-					fmt.Print("Continue USed ")
+					log.Print("Continue USed ")
 					continue
 				}
 
 				quantityToTake := int32(math.Min(float64(remainingQty), float64(totalAvailable)))
-				fmt.Printf("Processing transfer. Quantity to take: %d\n", quantityToTake)
+				log.Printf("Processing transfer. Quantity to take: %d\n", quantityToTake)
 
-				fmt.Printf(" IT is working correctly q > 0 %v %v \n", availableQuantities.Normal, availableQuantities.Normal > 0)
+				log.Printf(" IT is working correctly q > 0 %v %v \n", availableQuantities.Normal, availableQuantities.Normal > 0)
 				if int32(availableQuantities.Normal) > 0 {
 					inversePrice, err := strconv.Atoi(keys)
 					if err != nil {
-						fmt.Printf("Failed to convert price str to int before transfer: %v\n", err)
+						log.Printf("Failed to convert price str to int before transfer: %v\n", err)
 						return "", fmt.Errorf("failed to handle price conv: %v", err)
 					}
 
 					if err := helper.HandleSellTransfer(userId, seller1, stockSymbol, stockType, quantityToTake, price, int32(inversePrice)); err != nil {
-						fmt.Printf("Failed to handle normal transfer: %v\n", err)
+						log.Printf("Failed to handle normal transfer: %v\n", err)
 						return "", fmt.Errorf("failed to handle normal transfer: %v", err)
 					}
 
 					availableQuantities.Normal -= int(quantityToTake)
-					fmt.Printf("Updated available quantities after transfer - Normal: %d\n", availableQuantities.Normal)
+					log.Printf("Updated available quantities after transfer - Normal: %d\n", availableQuantities.Normal)
 
 					data.Orders[seller1] = availableQuantities
 
-					fmt.Printf("Subtracting Start after matching %v quantity taken : %v", data, quantityToTake)
+					log.Printf("Subtracting Start after matching %v quantity taken : %v", data, quantityToTake)
 					data.Total -= int(quantityToTake)
-					fmt.Printf("Subtracting Done after matching %v", data)
+					log.Printf("Subtracting Done after matching %v", data)
 
 					remainingQty -= quantityToTake
 
@@ -412,20 +434,20 @@ func SellOrder(userId string, stockSymbol string, quantity int32, price int32, s
 				if availableQuantities.Inverse == 0 && availableQuantities.Normal == 0 {
 
 					delete(data.Orders, seller1)
-					fmt.Printf("Deleted seller %s from orders\n", seller1)
+					log.Printf("Deleted seller %s from orders\n", seller1)
 
-					fmt.Printf(" \n Order List total : %v  %v\n", data, data.Orders)
+					log.Printf(" \n Order List total : %v  %v\n", data, data.Orders)
 
 					if data.Total == 0 {
 						delete(oppOutcome, keys)
-						fmt.Printf("Deleted key %s from oppOutcome\n", keys)
+						log.Printf("Deleted key %s from oppOutcome\n", keys)
 					}
 				} else {
-					fmt.Printf(" \n Updated remaining quantity after transaction - Remaining: %d total Remaning:%d \n", quantity, data.Total)
+					log.Printf(" \n Updated remaining quantity after transaction - Remaining: %d total Remaning:%d \n", quantity, data.Total)
 				}
 
 				if remainingQty == 0 {
-					fmt.Println("Order fully matched and fulfilled doing Break")
+					log.Println("Order fully matched and fulfilled doing Break")
 					break
 				}
 			}
@@ -434,7 +456,7 @@ func SellOrder(userId string, stockSymbol string, quantity int32, price int32, s
 	}
 
 	if remainingQty > 0 {
-		fmt.Printf(" After Loop ,Quantity remaining, adding order to outcome. Remaining Quantity: %d\n", remainingQty)
+		log.Printf(" After Loop ,Quantity remaining, adding order to outcome. Remaining Quantity: %d\n", remainingQty)
 		if _, found := outcome[priceStr]; !found {
 			outcome[priceStr] = &typess.Order{
 				Total:  0,
@@ -457,9 +479,9 @@ func SellOrder(userId string, stockSymbol string, quantity int32, price int32, s
 
 		stockBalance.Quantity -= remainingQty
 		stockBalance.Locked += remainingQty
-		fmt.Printf("After Loop, Order added to order book. Total: %d, Locked: %d\n", order.Total, stockBalance.Locked)
+		log.Printf("After Loop, Order added to order book. Total: %d, Locked: %d\n", order.Total, stockBalance.Locked)
 	} else {
-		fmt.Println("After Loop Quantity is Zero, order fully matched and removed")
+		log.Println("After Loop Quantity is Zero, order fully matched and removed")
 	}
 
 	data := map[string]interface{}{
@@ -468,7 +490,7 @@ func SellOrder(userId string, stockSymbol string, quantity int32, price int32, s
 		"Balance":      typess.INR_BALANCES[userId],
 	}
 	go Publish(stockSymbol)
-	fmt.Println("Sell order placed successfully and published")
+	log.Println("Sell order placed successfully and published")
 
 	return CreateJSONResponse("Sell Order Placed", data)
 }
@@ -565,7 +587,7 @@ func SellOrder(userId string, stockSymbol string, quantity int32, price int32, s
 // 			for seller1, availableQuantities := range data.Orders {
 
 // 				if _, found := typess.STOCK_BALANCES[seller1]; !found {
-// 					return "", fmt.Errorf("seller1 %s not found in stock balances", seller1)
+// 					return "", log.Errorf("seller1 %s not found in stock balances", seller1)
 // 				}
 
 // 				totalAvailable := int32(availableQuantities.Normal)
@@ -576,17 +598,17 @@ func SellOrder(userId string, stockSymbol string, quantity int32, price int32, s
 
 // 				quantityToTake := int32(math.Min(float64(remainingQuantity), float64(totalAvailable)))
 
-// 				fmt.Printf(" \n Quantity %v %v  ", quantityToTake, availableQuantities.Normal)
+// 				log.Printf(" \n Quantity %v %v  ", quantityToTake, availableQuantities.Normal)
 
 // 				if int32(availableQuantities.Normal) > 0 {
 
 // 					if err := helper.HandleSellTransfer(userId, seller1, stockSymbol, stockType, quantityToTake, price); err != nil {
 
-// 						return "", fmt.Errorf("failed to handle normal transfer: %v", err)
+// 						return "", log.Errorf("failed to handle normal transfer: %v", err)
 // 					}
 // 					availableQuantities.Normal -= int(quantityToTake)
 
-// 					fmt.Printf("Available Quantitis after seller transfer %v", availableQuantities.Normal)
+// 					log.Printf("Available Quantitis after seller transfer %v", availableQuantities.Normal)
 
 // 					remainingAfterNormal := quantityToTake - int32(availableQuantities.Normal)
 
@@ -650,7 +672,7 @@ func SellOrder(userId string, stockSymbol string, quantity int32, price int32, s
 // 		stockBalance.Quantity -= quantity
 // 		stockBalance.Locked += quantity
 // 	} else {
-// 		fmt.Print("Quantity is Zero")
+// 		log.Print("Quantity is Zero")
 // 	}
 
 // 	data := map[string]interface{}{

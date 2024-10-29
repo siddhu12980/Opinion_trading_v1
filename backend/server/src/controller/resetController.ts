@@ -16,6 +16,7 @@ export async function resetController(req: Request, res: Response) {
 
     const data = JSON.stringify({ "req": reqTypes.reset, "id": id })
 
+    console.log(data)
 
     const promisData = handlePubSubWithTimeout(id, 5000)
 

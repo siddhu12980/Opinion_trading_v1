@@ -572,7 +572,7 @@ func ProcessExistingOrdersNO(
 				Orders: make(map[string]typess.OrderTypes),
 			}
 		} else {
-			// fmt.Printf("Found existing entry in yesOrders for InvPriceStr %v\n", op.InvPriceStr)
+			 fmt.Printf("Found existing entry in yesOrders for InvPriceStr %v\n", op.InvPriceStr)
 		}
 
 		orderList := (*yesOrders)[op.InvPriceStr].Orders

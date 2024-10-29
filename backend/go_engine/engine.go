@@ -14,27 +14,34 @@ import (
 type ReqType int
 
 const (
-	_                  ReqType = iota
-	GetStockBalance            // 0
-	GetINRBalance              // 1
-	GetAllINRBalance           // 2
-	BuyNoOrder                 // 3
-	BuyYesOrder                // 4
-	GetAllStockBalance         // 5
-	CreateSymbol               // 6
-	GetOrderbook               // 7
-	GetAllOrderbook            // 8
-	MintStock                  // 9
-	OnRampINR                  // 10
-	Reset                      // 11
-	SellOrder                  // 12
-	CreateUser                 // 13
+	GetStockBalance ReqType = iota + 1
+	GetINRBalance
+	GetAllINRBalance
+	BuyNoOrder
+	BuyYesOrder
+	GetAllStockBalance
+	CreateSymbol
+	GetOrderbook
+	GetAllOrderbook
+	MintStock
+	OnRampINR
+	Reset
+	SellOrder
+	CreateUser
 )
 
 var client *redis.Client
 
 func initRedis() {
-	opt, err := redis.ParseURL("redis://localhost:6379")
+	url, err := controller.ENVVariable("REDIS_URL")
+
+	if err != nil {
+		log.Fatalf("Could not parse Redis URL: %v", err)
+	}
+
+	//"redis://localhost:6379"
+	opt, err := redis.ParseURL(url)
+
 	if err != nil {
 		log.Fatalf("Could not parse Redis URL: %v", err)
 	}
@@ -44,72 +51,72 @@ func initRedis() {
 func handleReq(reqType ReqType, msg Message, ctx context.Context) {
 	switch reqType {
 	case GetStockBalance:
-		fmt.Println("Processing: GetStockBalance")
+		log.Println("Processing: GetStockBalance")
 		res, err := controller.GetStockBalance(msg.UserID)
 		HandleRes(res, err, msg.ID, ctx)
 
 	case GetINRBalance:
-		fmt.Println("Processing: GetINRBalance")
+		log.Println("Processing: GetINRBalance")
 		res, err := controller.GetINRBalance(msg.UserID)
 		HandleRes(res, err, msg.ID, ctx)
 
 	case GetAllINRBalance:
-		fmt.Println("Processing: GetAllINRBalance")
+		log.Println("Processing: GetAllINRBalance")
 		res, err := controller.GetAllINRBalance()
 		HandleRes(res, err, msg.ID, ctx)
 
 	case BuyNoOrder:
-		fmt.Println("Processing: BuyNoOrder")
+		log.Println("Processing: BuyNoOrder")
 		res, err := controller.BuyNoOrder(msg.UserID, msg.StockSymbol, int32(msg.Quantity), int32(msg.Price))
 		HandleRes(res, err, msg.ID, ctx)
 
 	case BuyYesOrder:
-		fmt.Println("Processing: BuyYesOrder")
+		log.Println("Processing: BuyYesOrder")
 		res, err := controller.BuyYesOrder(msg.UserID, msg.StockSymbol, int32(msg.Quantity), int32(msg.Price))
 		HandleRes(res, err, msg.ID, ctx)
 
 	case GetAllStockBalance:
-		fmt.Println("Processing: GetAllStockBalance")
+		log.Println("Processing: GetAllStockBalance")
 		res, err := controller.GetAllStockBalance()
 		HandleRes(res, err, msg.ID, ctx)
 
 	case CreateSymbol:
-		fmt.Println("Processing: CreateSymbol")
+		log.Println("Processing: CreateSymbol")
 		res, err := controller.CreateSymbol(msg.StockSymbol)
 		HandleRes(res, err, msg.ID, ctx)
 
 	case GetOrderbook:
-		fmt.Println("Processing: GetOrderbook")
+		log.Println("Processing: GetOrderbook")
 		res, err := controller.GetOrderbook(msg.StockSymbol)
 		HandleRes(res, err, msg.ID, ctx)
 
 	case GetAllOrderbook:
-		fmt.Println("Processing: GetAllOrderbook")
+		log.Println("Processing: GetAllOrderbook")
 		res, err := controller.GetAllOrderbook()
 		HandleRes(res, err, msg.ID, ctx)
 
 	case MintStock:
-		fmt.Println("Processing: MintStock")
+		log.Println("Processing: MintStock")
 		res, err := controller.MintStock(msg.UserID, msg.StockSymbol, int32(msg.Quantity), int32(msg.Price))
 		HandleRes(res, err, msg.ID, ctx)
 
 	case OnRampINR:
-		fmt.Println("Processing: OnRampINR")
+		log.Println("Processing: OnRampINR")
 		res, err := controller.Onramp(msg.UserID, int32(msg.Amount))
 		HandleRes(res, err, msg.ID, ctx)
 
 	case Reset:
-		fmt.Println("Processing: Reset")
+		log.Println("Processing: Reset")
 		res, err := controller.Reset()
 		HandleRes(res, err, msg.ID, ctx)
 
 	case SellOrder:
-		fmt.Println("Processing: SellOrder")
+		log.Println("Processing: SellOrder")
 		res, err := controller.SellOrder(msg.UserID, msg.StockSymbol, int32(msg.Quantity), int32(msg.Price), msg.StockType)
 		HandleRes(res, err, msg.ID, ctx)
 
 	case CreateUser:
-		fmt.Println("Processing: CreateUser")
+		log.Println("Processing: CreateUser")
 		res, err := controller.CreateUser(msg.UserID)
 		HandleRes(res, err, msg.ID, ctx)
 
@@ -119,6 +126,12 @@ func handleReq(reqType ReqType, msg Message, ctx context.Context) {
 }
 
 func HandleRes(res string, err error, id string, ctx context.Context) {
+	fmt.Println("hello")
+
+	if client == nil {
+		initRedis()
+	}
+
 	if id == "" {
 		log.Println("No ID provided in message")
 		return
@@ -128,7 +141,10 @@ func HandleRes(res string, err error, id string, ctx context.Context) {
 		log.Printf("Error: %v", err)
 	}
 
-	log.Printf("Sending Response: %v \n \n \n", res)
+	log.Printf("Sending Response: %v \n ", res)
+
+	log.Printf("End state var: order book %v \n stock book %v \n inrBalance %v \n", typess.ORDER_BOOK, typess.STOCK_BALANCES, typess.INR_BALANCES)
+
 	if err := client.Publish(ctx, id, res).Err(); err != nil {
 		log.Printf("Failed to publish response: %v", err)
 	}
@@ -153,12 +169,13 @@ func worker(ctx context.Context, msgCh <-chan Message) {
 }
 
 func main() {
+	log.Println(typess.INR_BALANCES, typess.STOCK_BALANCES, typess.ORDER_BOOK)
 	initRedis()
 	ctx := context.Background()
 
 	msgCh := make(chan Message)
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 4; i++ {
 		go worker(ctx, msgCh)
 	}
 
@@ -180,7 +197,9 @@ func main() {
 			continue
 		}
 
+		log.Printf("Start process state var: order book %v \n stock book %v \n inrBalance %v \n", typess.ORDER_BOOK, typess.STOCK_BALANCES, typess.INR_BALANCES)
+
 		log.Printf("\n \n \n Received Message: %+v", msg)
-		msgCh <- msg // Send message to worker goroutines
+		msgCh <- msg
 	}
 }
