@@ -5,8 +5,13 @@ metadata:
   namespace: default
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/issuer: "letsencrypt-prod"
 spec:
   ingressClassName: nginx
+  tls:
+  - hosts:
+    - probo.sidd.live
+    secretName: quickstart-example-tls
   rules:
   - host: probo.sidd.live
     http:
