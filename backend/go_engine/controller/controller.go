@@ -829,19 +829,3 @@ func BuyYesOrder(userID string, stockSymbol string, quantity int32, price int32)
 
 	return CreateJSONResponse("Buy Yes Order Complete", data)
 }
-
-// func ProcessNoOrder(
-// 	op typess.OrderBookOperation,
-// 	noOrders typess.Outcome,
-// 	yesOrders typess.Outcome,
-// 	userBalance *typess.UserBalance,
-// ) (*typess.ProcessResult, error) {
-
-// 	existingOrders, hasMatchingOrders := noOrders[op.PriceStr]
-
-// 	if !hasMatchingOrders {
-// 		return helper.CreateNewInverseOrder(op, yesOrders, userBalance)
-// 	}
-
-// 	return helper.ProcessExistingOrders(op, existingOrders, noOrders, yesOrders, userBalance)
-// }

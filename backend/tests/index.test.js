@@ -1,8 +1,8 @@
 const axios = require('axios');
 const WebSocket = require('ws');
 
-const HTTP_SERVER_URL = "http://146.190.8.187/api/v1"
-const WS_SERVER_URL = "ws://64.225.86.44"
+const HTTP_SERVER_URL = "https://probo.sidd.live/server/api/v1"
+const WS_SERVER_URL = "wss://probo.sidd.live/socket"
 // const HTTP_SERVER_URL = 'http://localhost:3000/api/v1';
 // const WS_SERVER_URL = 'ws://localhost:8080';
 

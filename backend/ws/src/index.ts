@@ -85,10 +85,8 @@ export async function startWebSocketServer(port: number) {
     });
   });
 
-  // Ensure Redis connection is established
   await redisPubSubManager.ensureRedisConnection();
 
-  // Cleanup on server shutdown
   process.on('SIGINT', async () => {
     console.log('Shutting down WebSocket server...');
     await redisPubSubManager.disconnect();
