@@ -12,6 +12,7 @@ spec:
   tls:
   - hosts:
     - probo.sidd.live
+    - test.sidd.live
     secretName: quickstart-example-tls
   rules:
   - host: probo.sidd.live
@@ -32,6 +33,16 @@ spec:
             port:
               number: 8080
 
+  - host: test.sidd.live
+    http:
+      paths:
+      - path: /chain(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: fast-chain-service
+            port:
+              number: 3005
       - path: /test(/|$)(.*)
         pathType: ImplementationSpecific
         backend:
