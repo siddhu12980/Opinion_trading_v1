@@ -1,5 +1,5 @@
 
-const SlideCard = () => {
+const SlideCard = ({title,orders}:{title:string,orders:number}) => {
   return (
     <div className="w-full max-w-md bg-white border border-gray-200 rounded-lg shadow ">
 
@@ -7,11 +7,11 @@ const SlideCard = () => {
         <img className="p-4 rounded-t-lg" src="./f1.png" alt="product image" height={150} width={150} />
       </a>
       <div className="text-sm">
-        3127 orders
+        {orders} orders
       </div>
       <div className="px-2 pb-4">
         <a href="#">
-          <h5 className="text-xs font-semibold tracking-tight text-gray-900 ">Apple Watch Series 7 GPS, Aluminium Case, Starlight Sport</h5>
+          <h5 className="text-xs font-semibold tracking-tight text-gray-900 ">{title}</h5>
         </a>
 
         <div className="flex items-center  gap-2 justify-between">

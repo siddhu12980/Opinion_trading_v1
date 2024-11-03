@@ -9,21 +9,21 @@ const gridData = [
   },
   {
     id: 2,
-    image: "./nazar.avif",
+    image: "./khabar.avif",
     title: "Khabar",
     description:
       "Understand the news without the noise. Get to the crux of every matter and develop an opinion.",
   },
   {
     id: 3,
-    image: "./nazar.avif",
+    image: "./jigar.avif",
     title: "Jigar",
     description:
-      "Have the courage to stand by your opinions about upcoming world events by investing.",
+      "Have the courage to stand by your opinions about   upcoming world events by investing.",
   },
   {
     id: 4,
-    image: "./nazar.avif",
+    image: "./sabar.avif",
     title: "Sabar",
     description:
       "Have the patience to negotiate market ups and downs, and take a decision as events unfold.",
@@ -47,8 +47,8 @@ const Nazar = () => {
       <div className="text-xl grid grid-cols-4 gap-4">
         {gridData.map((item) => (
           <div key={item.id} className="relative w-full col-span-1">
-            <img src={item.image} alt={item.title} />
-            <div className="absolute -bottom-5 mx-auto flex flex-col gap-2 bg-slate-200 w-[80%] ml-[10%] p-2">
+            <img src={item.image} alt={item.title}  height={400} width={350} className="mx-auto"/>
+            <div className="absolute -bottom-3 mx-auto flex flex-col gap-2 bg-slate-200 w-[80%] ml-[12%] p-2">
               <div className="font-semibold">{item.title}</div>
               <div className="text-sm">{item.description}</div>
             </div>

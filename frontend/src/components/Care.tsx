@@ -8,21 +8,21 @@ const careData = [
   },
   {
     id: 2,
-    icon: "./news.avif",
+    icon: "./tra.avif",
     title: "All the news without the noise",
     description:
       "Our experts go through tons of information to get to the very core of a world event. They help you develop not only an opinion about events but also a better understanding of the world around us.",
   },
   {
     id: 3,
-    icon: "./news.avif",
+    icon: "./tra2.avif",
     title: "The power to exit trades, anytime",
     description:
       "Probo is an opinion trading platform. And, like a true trading platform, Probo gives you the power to exit. You can withdraw from a trade, if it’s not going in the direction you thought it would go.",
   },
   {
-    id: 4,
-    icon: "./news.avif",
+    id: 4,  
+    icon: "./tra3.avif",
     title: "The pulse of society is on Probo",
     description:
       "Besides helping you learn important financial & trading skills, Probo also helps you understand the collective thoughts of Indians. Knowledge that is crucial for the betterment of our country.",

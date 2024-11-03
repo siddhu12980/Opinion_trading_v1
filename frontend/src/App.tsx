@@ -1,11 +1,17 @@
+import { RecoilRoot } from 'recoil';
 import './App.css'
-import Navbar from './components/Navbar';
 import AppRoutes from './routes/index.routes';
+import { QueryClient, QueryClientProvider } from 'react-query';
+export const queryClient = new QueryClient()
 function App() {
   return (
     <div className='w-full'>
-      <Navbar />
-      <AppRoutes />
+
+      <QueryClientProvider client={queryClient}>
+        <RecoilRoot>
+          <AppRoutes />
+        </RecoilRoot>
+      </QueryClientProvider>
     </div>
   )
 }
