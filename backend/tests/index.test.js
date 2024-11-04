@@ -80,7 +80,7 @@ describe('Trading System Tests', () => {
       stockSymbol: symbol,
       quantity: 100,
       price: 850,
-      stockType: 'yes'
+      stockType: 'no'
     });
 
     const wsMessage = await waitForWSMessage();
@@ -88,7 +88,7 @@ describe('Trading System Tests', () => {
 
     expect(data.status).toBe(200)
 
-    expect(wsMessage.message["no"]['150']).toEqual({
+    expect(wsMessage.message["yes"]['150']).toEqual({
       total: 100,
       orders: {
         [userId]: {

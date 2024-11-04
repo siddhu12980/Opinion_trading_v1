@@ -10,8 +10,6 @@ import { calculateTotal, validateBuy, validateSell } from "../helper/helper";
 import { ActionButton, NumberInput } from "../helper/Helper_comp";
 
 
-
-
 const PlaceOrder: React.FC = () => {
   const queryClient = useQueryClient()
 
@@ -23,7 +21,7 @@ const PlaceOrder: React.FC = () => {
   const [quantity, setQuantity] = useState<string>("1.0");
   const [selectedType, setSelectedType] = useState<OrderType>("Yes");
   const [tradeType, setTradeType] = useState<TradeType>("Buy");
-  const [socket, setSocket] = useState<WebSocket | null>(null)
+  // const [socket, setSocket] = useState<WebSocket | null>(null)
 
   const validateOrder = () => {
     const stockSymbol = "btc";
@@ -43,6 +41,8 @@ const PlaceOrder: React.FC = () => {
       currentStockQuantity = 0
     }
 
+
+
     if (tradeType === "Buy") {
       const isValid = validateBuy(price, balance, quantity);
       setError(!isValid);
@@ -57,11 +57,13 @@ const PlaceOrder: React.FC = () => {
   };
 
   const handlePriceChange = (newPrice: string) => {
+
     setPrice(newPrice);
     validateOrder();
   };
 
   const handleQuantityChange = (newQuantity: string) => {
+
     setQuantity(newQuantity);
     validateOrder();
   };
@@ -78,22 +80,31 @@ const PlaceOrder: React.FC = () => {
           total: calculateTotal(price, quantity)
         });
 
-        let data = ({
-          "userId": "buyer1",
-          "stockSymbol": "btc",
-          "quantity": parseInt(quantity),
-          "price": (parseInt(price) * 100),
-          "stockType": "yes"
-        });
+        console.log(quantity, price, selectedType.toLowerCase())
 
+        {
+          // "userId": "buyer1",
+          // "stockSymbol": "btc",
+          // "quantity": 50,
+          // "price": 500,
+          // "stockType":"no"
+        }
 
         try {
-          const response = await axios.post(`${HTTP_SERVER_URL}/order/buy`, data);
+          const response = await axios.post(`${HTTP_SERVER_URL}/order/buy`, {
+            "userId": "buyer1",
+            "stockSymbol": "btc",
+            "quantity": parseInt(quantity),
+            "price": (parseInt(price) * 100),
+            "stockType": selectedType.toLocaleLowerCase()
+          });
+
           if (response.data.data.orderBook) {
             await queryClient.invalidateQueries({ queryKey: ['userBalance'] });
             const newBalanceResponse = await axios.get(`${HTTP_SERVER_URL}/balance/inr/buyer1`);
             setBalance(newBalanceResponse.data.data.balance / 100);
           }
+
         } catch (error) {
           console.error('Order error:', error);
         }
@@ -119,36 +130,9 @@ const PlaceOrder: React.FC = () => {
 
 
   useEffect(() => {
-    console.log("Starting WebSocket connection");
-    const conn = new WebSocket(WS_SERVER_URL);
-
-    conn.onopen = () => {
-      console.log("WebSocket connected");
-      const data = JSON.stringify({
-        "stockSymbol": "btc",
-        "action": "subscribe"
-      });
-      conn.send(data);
-      setSocket(conn);
-    };
-
-    conn.onmessage = (message) => {
-      const res = JSON.parse(message.data)
-      console.log(res.message)
-    };
-
-    return () => {
-      console.log("Closing WebSocket connection");
-      conn.close();
-    };
-  }, []);
-
-  useEffect(() => {
     validateOrder();
 
   }, [tradeType, selectedType, price, quantity, balance, userStocks]);
-
-
 
   return (
     <div>

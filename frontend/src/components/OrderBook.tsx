@@ -44,8 +44,23 @@ const TableHeader = ({ title }: { title: string }) => (
     </div>
   );
   
-  const OrderBook = (): JSX.Element => {
-    const yesOrders = [
+
+  interface StockData {
+    price: number;
+    quantity: number;
+  }
+  
+  interface WsData {
+    yes?: StockData[];
+    no?: StockData[];
+  }
+
+  type AnsData = WsData | null
+
+  const OrderBook = ({wsData}: {wsData:AnsData}) => {
+
+ 
+    const yesOrders_const = [
       { price: 6.5, quantity: 50 },
       { price: 7, quantity: 977 },
       { price: 8, quantity: 54 },
@@ -53,13 +68,18 @@ const TableHeader = ({ title }: { title: string }) => (
       { price: 9, quantity: 3 },
     ];
   
-    const noOrders = [
+    const noOrders_const = [
       { price: 4, quantity: 1 },
       { price: 4.5, quantity: 5 },
       { price: 5.5, quantity: 1 },
       { price: 6, quantity: 3 },
       { price: 6.5, quantity: 8 },
     ];
+
+    const yesOrders = wsData ? wsData.yes : yesOrders_const
+
+    const noOrders = wsData ? wsData.no : noOrders_const
+
   
     return (
       <div className="bg-white border border-slate-200 rounded-2xl shadow-xl h-96 relative top-24">

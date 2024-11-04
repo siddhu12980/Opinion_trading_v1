@@ -734,7 +734,7 @@ func BuyNoOrder(userID string, stockSymbol string, quantity int32, price int32) 
 
 	if !hasMatchingOrders {
 		fmt.Print("Starting INverse")
-		order_result, err1 = helper.CreateNewInverseOrder(op, noOrders, &userBalance)
+		order_result, err1 = helper.CreateNewInverseOrder(op, yesOrders, &userBalance)
 		fmt.Print("Creating INverse")
 	} else {
 		fmt.Print("Starting Existing ")
