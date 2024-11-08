@@ -31,3 +31,11 @@ spec:
             name: ws-service
             port:
               number: 8080
+
+      - path: /test(/|$)(.*)
+        pathType: ImplementationSpecific
+        backend:
+          service:
+            name: fast-server-service
+            port:
+              number: 8000
