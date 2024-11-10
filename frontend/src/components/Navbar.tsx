@@ -8,11 +8,11 @@ const Navbar = ({ onSignIn, onSignUp }:any) => {
           <img src="./logo.avif" />
         </div>
         <div className=" flex space-x-8 text-xl">
-          <div>Trading</div>
-          <div>Team11</div>
-          <div>Read</div>
-          <div>Cares</div>
-          <div>Careers</div>
+          <div className=" cursor-pointer">Trading</div>
+          <div className=" cursor-pointer">Team11</div>
+          <div className=" cursor-pointer">Read</div>
+          <div className=" cursor-pointer">Cares</div>
+          <div className=" cursor-pointer">Careers</div>
         </div>
       </div>
 

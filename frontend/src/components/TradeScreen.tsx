@@ -100,7 +100,6 @@ const TradeScreen = () => {
     };
   }, []);
 
-
   return (
     <>
       <NavbarUser balance={userBalance.balance} />

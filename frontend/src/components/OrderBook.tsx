@@ -88,8 +88,8 @@ const TableHeader = ({ title }: { title: string }) => (
           <span className="text-slate-500">Activity</span>
         </div>
         <section className="grid grid-cols-2 gap-5 p-4">
-          <OrderSection type="YES" orders={yesOrders} />
-          <OrderSection type="NO" orders={noOrders} />
+          <OrderSection type="YES" orders={yesOrders!} />
+          <OrderSection type="NO" orders={noOrders!} />
         </section>
       </div>
     );

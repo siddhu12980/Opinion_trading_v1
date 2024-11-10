@@ -134,19 +134,33 @@ func HandleRes(res string, err error, id string, ctx context.Context) {
 
 	if id == "" {
 		log.Println("No ID provided in message")
-		return
+
 	}
 
 	if err != nil {
-		log.Printf("Error: %v", err)
-	}
+		log.Printf("Error at Response: %v", err)
+		response := map[string]interface{}{"error": err}
 
-	log.Printf("Sending Response: %v \n ", res)
+		jsonResponse, err := json.Marshal(response)
 
-	log.Printf("End state var: order book %v \n stock book %v \n inrBalance %v \n", typess.ORDER_BOOK, typess.STOCK_BALANCES, typess.INR_BALANCES)
+		if err != nil {
+			fmt.Printf("Error While Parsing error")
+		}
 
-	if err := client.Publish(ctx, id, res).Err(); err != nil {
-		log.Printf("Failed to publish response: %v", err)
+		err_res := string(jsonResponse)
+
+		if err := client.Publish(ctx, id, err_res).Err(); err != nil {
+			log.Printf("Failed to publish response: %v", err)
+		}
+
+	} else {
+		log.Printf("Sending Response: %v \n ", res)
+		log.Printf("End state var: order book %v \n stock book %v \n inrBalance %v \n", typess.ORDER_BOOK, typess.STOCK_BALANCES, typess.INR_BALANCES)
+
+		if err := client.Publish(ctx, id, res).Err(); err != nil {
+			log.Printf("Failed to publish response: %v", err)
+		}
+
 	}
 }
 
@@ -181,6 +195,7 @@ func main() {
 
 	for {
 		reqData, err := client.BRPop(ctx, 0, "req").Result()
+
 		if err != nil {
 			log.Println("Error fetching from Redis:", err)
 			continue

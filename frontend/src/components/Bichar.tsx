@@ -32,7 +32,7 @@ export const Bichar = () => {
 
         <div className="flex gap-4 ">
           {datass.map((d, i) => {
-            return <div onClick={() => setIndex(i)} className={`text-5xl cursor-pointer ${i == index ? `text-white` : `text-slate-400 text-opacity-50`} `} >
+            return <div key={i} onClick={() => setIndex(i)} className={`text-5xl cursor-pointer ${i == index ? `text-white` : `text-slate-400 text-opacity-50`} `} >
               {d.title}
             </div>
           })}

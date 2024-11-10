@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { AlertCircle, ChevronDown } from "lucide-react";
-import { HTTP_SERVER_URL, WS_SERVER_URL } from "../constants/const";
+import { HTTP_SERVER_URL } from "../constants/const";
 import { userBalanceSelector, userStockSelector } from "../Store/atom";
 import { useRecoilState, useRecoilValue } from "recoil";
 import axios from "axios";
@@ -80,24 +80,17 @@ const PlaceOrder: React.FC = () => {
           total: calculateTotal(price, quantity)
         });
 
-        console.log(quantity, price, selectedType.toLowerCase())
-
-        {
-          // "userId": "buyer1",
-          // "stockSymbol": "btc",
-          // "quantity": 50,
-          // "price": 500,
-          // "stockType":"no"
-        }
+        console.log(quantity, parseFloat(price), selectedType.toLowerCase())
 
         try {
           const response = await axios.post(`${HTTP_SERVER_URL}/order/buy`, {
             "userId": "buyer1",
             "stockSymbol": "btc",
             "quantity": parseInt(quantity),
-            "price": (parseInt(price) * 100),
+            "price": ((parseFloat(price) * 100)),
             "stockType": selectedType.toLocaleLowerCase()
           });
+          
 
           if (response.data.data.orderBook) {
             await queryClient.invalidateQueries({ queryKey: ['userBalance'] });

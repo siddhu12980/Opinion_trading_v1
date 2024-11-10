@@ -1,6 +1,6 @@
 export default function ScrollCard() {
     return (
-      <div className="flex flex-col bg-white border shadow-sm rounded-xl p-4 md:p-5  ">
+      <div className="flex flex-col bg-white border shadow-sm rounded-xl p-4 md:p-5  cursor-pointer ">
         <img
           height="60px"
           width="60px"

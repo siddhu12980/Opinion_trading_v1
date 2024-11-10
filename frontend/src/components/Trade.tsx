@@ -55,7 +55,7 @@ export const Trade = () => {
     <>
       <NavbarUser balance={balance} />
       <EventNavbar />
-      <EventComp />
+      <EventComp /> 
     </>
 
   )

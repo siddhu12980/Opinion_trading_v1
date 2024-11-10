@@ -356,6 +356,10 @@ func MatchOrders(
 			return -1, fmt.Errorf("seller %s not found in stock balances", seller)
 		}
 
+		if seller == buyer {
+			continue
+		}
+
 		totalAvailable := int32(availableQuantities.Normal + availableQuantities.Inverse)
 		if totalAvailable <= 0 {
 			continue
@@ -572,7 +576,7 @@ func ProcessExistingOrdersNO(
 				Orders: make(map[string]typess.OrderTypes),
 			}
 		} else {
-			 fmt.Printf("Found existing entry in yesOrders for InvPriceStr %v\n", op.InvPriceStr)
+			fmt.Printf("Found existing entry in yesOrders for InvPriceStr %v\n", op.InvPriceStr)
 		}
 
 		orderList := (*yesOrders)[op.InvPriceStr].Orders

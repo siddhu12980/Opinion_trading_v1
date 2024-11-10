@@ -18,8 +18,8 @@ export default function EventComp() {
         <div className="flex flex-col max-w-xl space-y-2">
           <h1 className="font-work-sans font-semibold text-left">Top Stories</h1>
           <div className="bg-white shadow-2xl rounded-2xl p-4 flex flex-col lg:flex-row justify-around">
-            <div onClick={()=>navigate("/order")} className="flex flex-col max-w-sm space-y-2">
-              <h1 className="flex items-center text-[18px] text-[#262626] font-semibold font-work-sans">
+            <div onClick={()=>navigate("/order")} className="flex flex-col max-w-sm space-y-2 justify-between cursor-pointer" >
+              <h1 className="flex items-center text-[18px] text-[#262626] font-semibold font-work-sans ">
                 Tax refunds by US government to be increased by 10%{" "}
                 <span className="ml-2">
                   <img
@@ -30,17 +30,13 @@ export default function EventComp() {
                   />
                 </span>
               </h1>
-              <p className="text-[#545454] font-work-sans font-semibold text-[14px]">
+              <p className="text-[#545454] font-work-sans font-semibold text-sm">
                 Tailwind doesn't include pre-designed card components out of the
                 box, but they're easy to build using existing utilities.
               </p>
-              <p className="text-[#545454] font-work-sans font-normal text-[10px]">
-                Tailwind CSS is a highly customizable, low-level CSS framework
-                that gives you all the building blocks to build bespoke designs
-                without opinionated styles to override.
-              </p>
-              <div className="flex justify-between mt-2">
-                <span>Traders</span>
+         
+              <div className="flex justify-between mt-2 ">
+                <span>Trades</span>
                 <div>
                   <button
                     type="button"
@@ -117,7 +113,7 @@ export default function EventComp() {
           All Events
         </h2>
         <div className="grid grid-cols-2 gap-3 mt-4">
-          <div onClick={()=>navigate("/order")}>
+          <div >
             <ScrollCard   />
           </div>
           <div>
