@@ -21,8 +21,8 @@ const NavbarUser = ({ balance }: { balance: number }) => {
             <div className="flex gap-4">
                 <IoMdHome size={28} className=" cursor-pointer" onClick={() => { nagivate("/trade") }} />
                 <PiSuitcaseSimpleLight size={28} />
-                <div className="flex px-2 py-2 border  justify-between gap-5  border-opacity-45 border-t-gray-400 border-double">
-                    <FaWallet size={18} />
+                <div className="flex px-2 py-2 border  justify-between gap-5  border-opacity-45 border-t-gray-400 border-double cursor-pointer">
+                    <FaWallet size={18} onClick={()=>window.location.href= "/account"} />
                     <div className=" text-xs">{balance}</div>
                 </div>
 

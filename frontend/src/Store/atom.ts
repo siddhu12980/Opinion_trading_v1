@@ -1,81 +1,63 @@
 import { atom, DefaultValue, selector } from "recoil";
 
 type User = {
-    userId: string;
-    balance: number;
-    stock: UserStockBalances
+  userId: string;
+  balance: Balance;
+  stock: UserStockBalances;
 };
 
+export interface Balance {
+  freeBalances: number;
+  lockedBalances: number;
+}
 
 export interface Stock {
-    quantity: number;
-    locked: number;
+  quantity: number;
+  locked: number;
 }
 
 export interface UserStockBalances {
-    [contract: string]: {
-        yes?: Stock;
-        no?: Stock;
-    };
+  [contract: string]: {
+    yes?: Stock;
+    no?: Stock;
+  };
 }
 
-
-
 const userState = atom<User>({
-    key: 'user',
-    default: {
-        userId: "",
-        balance: 0,
-        stock: {}
+  key: "user",
+  default: {
+    userId: "",
+    balance: {
+      freeBalances: 0,
+      lockedBalances: 0,
     },
-});
-
-
-
-const userBalanceSelector = selector<number>({
-    key: 'userBalance',
-    get: ({ get }) => {
-        const user = get(userState);
-        return user.balance;
-    },
-    set: ({ get, set }, newBalance) => {
-        if (!(newBalance instanceof DefaultValue)) {
-            const user = get(userState);
-            set(userState, {
-                ...user,
-                balance: newBalance
-            });
-        }
-    }
+    stock: {},
+  },
 });
 
 const userStockSelector = selector({
-    key: 'userStock',
-    get: ({ get }) => {
-        const user = get(userState);
-        return user.stock;
-    },
+  key: "userStock",
+  get: ({ get }) => {
+    const user = get(userState);
+    return user.stock;
+  },
 });
-
-
 
 const userIdSelector = selector<string>({
-    key: 'userId',
-    get: ({ get }) => {
-        const user = get(userState);
-        return user.userId;
-    },
-    set: ({ get, set }, userId) => {
-        if (!(userId instanceof DefaultValue)) {
-            const user = get(userState);
-            set(userState, {
-                ...user,
-                userId: userId
-            });
-        }
+  key: "userId",
+  get: ({ get }) => {
+    const user = get(userState);
+    return user.userId;
+  },
+  set: ({ get, set }, userId) => {
+    if (!(userId instanceof DefaultValue)) {
+      const user = get(userState);
+      set(userState, {
+        ...user,
+        userId: userId,
+      });
     }
+  },
 });
 
-
-
-export { userState, userBalanceSelector, userStockSelector };
+export { userState, userStockSelector };

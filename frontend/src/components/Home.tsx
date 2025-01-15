@@ -10,7 +10,6 @@ import Nazar from "./Nazar"
 import { Slider } from "./Slider"
 import { Modal } from "./Model"
 
-// 2. Modify your Home component
 const Home = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');

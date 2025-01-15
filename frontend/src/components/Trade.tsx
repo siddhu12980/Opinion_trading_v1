@@ -1,63 +1,56 @@
-import EventComp from "./EventComp"
-import EventNavbar from "./EventNavbar"
-import NavbarUser from "./NavbarUser"
-import axios from "axios"
-import { HTTP_SERVER_URL } from "../constants/const"
-import { userBalanceSelector } from "../Store/atom"
-import { useRecoilState } from "recoil"
-import { useQuery, useQueryClient } from "react-query"
-import { useEffect } from "react"
+import EventComp from "./EventComp";
+import EventNavbar from "./EventNavbar";
+import NavbarUser from "./NavbarUser";
+import axios from "axios";
+import { HTTP_SERVER_URL } from "../constants/const";
+import { useRecoilState } from "recoil";
+import { useQuery } from "react-query";
+import { userState } from "../Store/atom";
 
 export const Trade = () => {
-  const [balance, setBalance] = useRecoilState(userBalanceSelector)
-  const queryClient = useQueryClient();
+  const [user, setUser] = useRecoilState(userState);
 
-  async function get_user() {
-    try {
-      const response = await axios.get(`${HTTP_SERVER_URL}/balance/inr/buyer1`)
-      const data = response.data.data
-      return data
-    } catch (e) {
-      console.error(e);
-    }
+  if (!user.userId) {
+    return <span>Not logged in</span>;
   }
-
 
   const { isLoading, isError, data, error } = useQuery({
-    queryKey: ['userBalance'],
+    queryKey: ["userBalance"],
     queryFn: async () => {
-      const response = await axios.get(`${HTTP_SERVER_URL}/balance/inr/buyer1`);
+      const response = await axios.get(
+        `${HTTP_SERVER_URL}/balance/inr/${user.userId}`
+      );
+
+      if (!response.data.data) {
+        throw new Error("No data");
+      }
+
+      setUser((prev) => {
+        return {
+          ...prev,
+          balance: response.data.data,
+        };
+      });
+
       return response.data.data;
     },
-
   });
 
-
-  useEffect(() => {
-    if (data) {
-      setBalance(data.balance / 100);
-    }
-  }, [data, setBalance]);
-
-
-
-
   if (isLoading) {
-    return <span>Loading...</span>
+    return <span>Loading...</span>;
   }
 
-
-  if (isError) {
-    return <span>Error: {(error as Error).message}</span>
+  if (isError && error instanceof Error) {
+    return <span>Error: {error.message}</span>;
   }
-  
+
+  console.log(user);
+
   return (
     <>
-      <NavbarUser balance={balance} />
+      <NavbarUser balance={data.balance} />
       <EventNavbar />
-      <EventComp /> 
+      <EventComp />
     </>
-
-  )
-}
-
+  );
+};

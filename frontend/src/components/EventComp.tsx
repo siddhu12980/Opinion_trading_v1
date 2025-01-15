@@ -1,25 +1,48 @@
 import { useNavigate } from "react-router-dom";
 import ScrollCard from "./ScrollCard";
+import { useQuery } from "react-query";
+import axios from "axios";
 
 export default function EventComp() {
+  const Stockdata: {
+    stockTitle: string;
+    stockSymbol: string;
+  } = [];
+
+  const navigate = useNavigate();
+
   const description = {
     yes: "probability of yes",
     no: "probability of no",
   };
 
-  const navigate = useNavigate()
+  const res = useQuery({
+    queryKey: ["event"],
+    queryFn: async () => {
+      const response = await axios.get(
+        `http://localhost:3000/api/v1/symbol/all`
+      );
+      return response.data;
+    },
+  });
+
+  console.log(res.data);
 
   return (
     <section className="mx-6 mt-5 space-y-9">
-
-
       <div className="flex flex-col lg:flex-row justify-center lg:gap-x-32 space-y-8 lg:space-y-0">
+
         {/* Top Stories Section */}
         <div className="flex flex-col max-w-xl space-y-2">
-          <h1 className="font-work-sans font-semibold text-left">Top Stories</h1>
+          <h1 className="font-work-sans font-semibold text-left">
+            Top Stories
+          </h1>
           <div className="bg-white shadow-2xl rounded-2xl p-4 flex flex-col lg:flex-row justify-around">
-            <div onClick={()=>navigate("/order")} className="flex flex-col max-w-sm space-y-2 justify-between cursor-pointer" >
-              <h1 className="flex items-center text-[18px] text-[#262626] font-semibold font-work-sans ">
+            <div
+              onClick={() => navigate("/order")}
+              className="flex flex-col max-w-sm space-y-2 justify-between cursor-pointer"
+            >
+              <h1 className="flex items-center text-[22px] text-[#262626] font-semibold font-work-sans ">
                 Tax refunds by US government to be increased by 10%{" "}
                 <span className="ml-2">
                   <img
@@ -30,11 +53,8 @@ export default function EventComp() {
                   />
                 </span>
               </h1>
-              <p className="text-[#545454] font-work-sans font-semibold text-sm">
-                Tailwind doesn't include pre-designed card components out of the
-                box, but they're easy to build using existing utilities.
-              </p>
-         
+      
+
               <div className="flex justify-between mt-2 ">
                 <span>Trades</span>
                 <div>
@@ -113,8 +133,8 @@ export default function EventComp() {
           All Events
         </h2>
         <div className="grid grid-cols-2 gap-3 mt-4">
-          <div >
-            <ScrollCard   />
+          <div>
+            <ScrollCard />
           </div>
           <div>
             <ScrollCard />
@@ -124,4 +144,3 @@ export default function EventComp() {
     </section>
   );
 }
-    

@@ -1,7 +1,7 @@
 import { useRecoilValue } from "recoil";
 import NavbarUser from "./NavbarUser";
 import OrderBook from "./OrderBook";
-import PlaceOrder from "./PlaceOrder";
+// import PlaceOrder from "./PlaceOrder";
 import Tradeheader from "./Tradeheader";
 import { userState } from "../Store/atom";
 import { useEffect, useState } from "react";
@@ -71,6 +71,8 @@ const TradeScreen = () => {
   const userBalance = useRecoilValue(userState)
   const [ans_data,set_data] = useState<WsData | null>(null)
 
+  
+
 
 
   useEffect(() => {
@@ -114,7 +116,7 @@ const TradeScreen = () => {
             <OrderBook  wsData={ans_data} />
           </div>
           <div className="w-[30%]">
-            <PlaceOrder />
+            {/* <PlaceOrder /> */}
           </div>
         </div>
       </div>

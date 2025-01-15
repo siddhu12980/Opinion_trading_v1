@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { AlertCircle, ChevronDown } from "lucide-react";
 import { HTTP_SERVER_URL } from "../constants/const";
-import { userBalanceSelector, userStockSelector } from "../Store/atom";
 import { useRecoilState, useRecoilValue } from "recoil";
 import axios from "axios";
 import { useQueryClient } from "react-query";
