@@ -1,0 +1,141 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// model User {
+//   id                String             @id @default(cuid())
+//   email             String             @unique
+//   name              String?
+//   password          String
+//   createdAt         DateTime           @default(now())
+//   updatedAt         DateTime           @updatedAt
+//   userStockBalances UserStockBalance[]
+//   userBalance       UserBalance?
+//   markets           Markets[]
+//   orders            Orders[]
+// }
+
+// model Stock {
+//   id                String             @id @default(cuid())
+//   symbol            String             @unique
+//   type              StockType
+//   quantity          Int                @default(0)
+//   locked            Int                @default(0)
+//   createdAt         DateTime           @default(now())
+//   updatedAt         DateTime           @updatedAt
+//   userStockBalances UserStockBalance[]
+//   orders            Orders[]
+// }
+
+// model UserStockBalance {
+//   id        String   @id @default(cuid())
+//   userId    String
+//   stockId   String
+//   quantity  Int      @default(0)
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+//   user      User     @relation(fields: [userId], references: [id])
+//   stock     Stock    @relation(fields: [stockId], references: [id])
+
+//   @@unique([userId, stockId])
+//   @@index([userId])
+//   @@index([stockId])
+// }
+
+// model UserBalance {
+//   id             String   @id @default(cuid())
+//   userId         String   @unique
+//   free_balance   Int      @default(0)
+//   locked_balance Int      @default(0)
+//   user           User     @relation(fields: [userId], references: [id])
+//   createdAt      DateTime @default(now())
+//   updatedAt      DateTime @updatedAt
+// }
+
+// model Markets {
+//   id        String      @id @default(cuid())
+//   symbol    String      @unique
+//   createdAt DateTime    @default(now())
+//   updatedAt DateTime    @updatedAt
+//   creatorId String
+//   creator   User        @relation(fields: [creatorId], references: [id])
+//   orders    Orders[]
+//   orderBook OrderBook[]
+// }
+
+// model Orders {
+//   id        String      @id @default(cuid())
+//   userId    String
+//   marketId  String
+//   stockId   String
+//   price     Int
+//   quantity  Int
+//   type      OrderType
+//   status    OrderStatus
+//   createdAt DateTime    @default(now())
+//   updatedAt DateTime    @updatedAt
+//   user      User        @relation(fields: [userId], references: [id])
+//   market    Markets     @relation(fields: [marketId], references: [id])
+//   stock     Stock       @relation(fields: [stockId], references: [id])
+
+//   @@index([userId])
+//   @@index([marketId])
+//   @@index([stockId])
+// }
+
+// model OrderBook {
+//   id        String   @id @default(cuid())
+//   marketId  String
+//   price     Int
+//   yesOrders Json
+//   noOrders  Json
+//   market    Markets  @relation(fields: [marketId], references: [id])
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@unique([marketId, price])
+//   @@index([marketId])
+// }
+
+// enum OrderType {
+//   Normal
+//   Inverse
+// }
+
+// enum OrderStatus {
+//   Pending
+//   Completed
+//   Cancelled
+// }
+
+// enum StockType {
+//   YES
+//   NO
+// }
+
+model User {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Market {
+  id        String   @id @default(cuid())
+  symbol    String   @unique
+  title    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
