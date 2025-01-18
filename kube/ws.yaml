@@ -31,4 +31,3 @@ spec:
         env:
         - name: REDIS_URL
           value: 'redis://redis.default:6379'
-              # value: "redis.default:6379"  

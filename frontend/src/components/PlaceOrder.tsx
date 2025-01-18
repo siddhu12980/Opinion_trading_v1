@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { AlertCircle, ChevronDown } from "lucide-react";
 import { HTTP_SERVER_URL } from "../constants/const";
+import {
+  userBalanceSelector,
+  userState,
+  userStockSelector,
+} from "../Store/atom";
 import { useRecoilState, useRecoilValue } from "recoil";
 import axios from "axios";
 import { useQueryClient } from "react-query";
@@ -8,11 +13,10 @@ import { OrderType, TradeType } from "../Types/types";
 import { calculateTotal, validateBuy, validateSell } from "../helper/helper";
 import { ActionButton, NumberInput } from "../helper/Helper_comp";
 
-
-const PlaceOrder: React.FC = () => {
-  const queryClient = useQueryClient()
-
-  const [balance, setBalance] = useRecoilState(userBalanceSelector);
+const PlaceOrder = ({ stockSymbol }: { stockSymbol: string }) => {
+  const queryClient = useQueryClient();
+  const user = useRecoilValue(userState);
+  const [freeBalances, setFreeBalance] = useRecoilState(userBalanceSelector);
   const userStocks = useRecoilValue(userStockSelector);
   const [error, setError] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -20,30 +24,24 @@ const PlaceOrder: React.FC = () => {
   const [quantity, setQuantity] = useState<string>("1.0");
   const [selectedType, setSelectedType] = useState<OrderType>("Yes");
   const [tradeType, setTradeType] = useState<TradeType>("Buy");
-  // const [socket, setSocket] = useState<WebSocket | null>(null)
 
   const validateOrder = () => {
     const stockSymbol = "btc";
 
-
-    let currentStockQuantity
+    let currentStockQuantity;
 
     if (userStocks[stockSymbol]) {
-
-      if (selectedType == 'No') {
-        currentStockQuantity = userStocks[stockSymbol].no?.quantity ?? 0
+      if (selectedType == "No") {
+        currentStockQuantity = userStocks[stockSymbol].no?.quantity ?? 0;
       } else {
-        currentStockQuantity = userStocks[stockSymbol].yes?.quantity ?? 0
+        currentStockQuantity = userStocks[stockSymbol].yes?.quantity ?? 0;
       }
-
     } else {
-      currentStockQuantity = 0
+      currentStockQuantity = 0;
     }
 
-
-
     if (tradeType === "Buy") {
-      const isValid = validateBuy(price, balance, quantity);
+      const isValid = validateBuy(price, freeBalances || 0, quantity);
       setError(!isValid);
       setErrorMessage(isValid ? "" : "Insufficient balance");
       return isValid;
@@ -56,60 +54,61 @@ const PlaceOrder: React.FC = () => {
   };
 
   const handlePriceChange = (newPrice: string) => {
-
     setPrice(newPrice);
     validateOrder();
   };
 
   const handleQuantityChange = (newQuantity: string) => {
-
     setQuantity(newQuantity);
     validateOrder();
   };
 
   const handleOrder = async () => {
     if (!error) {
-
-      if (tradeType == 'Buy') {
+      if (tradeType == "Buy") {
         console.log({
           tradeType,
           type: selectedType,
           price,
           quantity,
-          total: calculateTotal(price, quantity)
+          total: calculateTotal(price, quantity),
         });
 
-        console.log(quantity, parseFloat(price), selectedType.toLowerCase())
+        console.log(quantity, parseFloat(price), selectedType.toLowerCase());
 
         try {
           const response = await axios.post(`${HTTP_SERVER_URL}/order/buy`, {
-            "userId": "buyer1",
-            "stockSymbol": "btc",
-            "quantity": parseInt(quantity),
-            "price": ((parseFloat(price) * 100)),
-            "stockType": selectedType.toLocaleLowerCase()
+            userId: user.userId,
+            stockSymbol: stockSymbol,
+            quantity: parseInt(quantity),
+            price: parseFloat(price) * 100,
+            stockType: selectedType.toLocaleLowerCase(),
           });
-          
 
-          if (response.data.data.orderBook) {
-            await queryClient.invalidateQueries({ queryKey: ['userBalance'] });
-            const newBalanceResponse = await axios.get(`${HTTP_SERVER_URL}/balance/inr/buyer1`);
-            setBalance(newBalanceResponse.data.data.balance / 100);
+          console.log("Order response:", response.data);
+
+          if (!response.data["data"]) {
+            setError(true);
+            setErrorMessage(response.data["message"]);
           }
 
+          if (response.data.data.orderBook) {
+            await queryClient.invalidateQueries({ queryKey: ["userBalance"] });
+            const newBalanceResponse = await axios.get(
+              `${HTTP_SERVER_URL}/balance/inr/${user.userId}`
+            );
+            setFreeBalance(newBalanceResponse.data.data.balance / 100);
+          }
         } catch (error) {
-          console.error('Order error:', error);
+          console.error("Order error:", error);
         }
       }
 
-      if (tradeType == 'Sell') {
-        console.log(tradeType, quantity, balance, price, selectedType)
+      if (tradeType == "Sell") {
+        console.log(tradeType, quantity, freeBalances, price, selectedType);
       }
-
-
     }
   };
-
 
   const handleTypeChange = (type: OrderType, defaultPrice: string) => {
     setSelectedType(type);
@@ -120,11 +119,9 @@ const PlaceOrder: React.FC = () => {
     setTradeType(type);
   };
 
-
   useEffect(() => {
     validateOrder();
-
-  }, [tradeType, selectedType, price, quantity, balance, userStocks]);
+  }, [tradeType, selectedType, price, quantity, freeBalances, userStocks]);
 
   return (
     <div>
@@ -181,11 +178,15 @@ const PlaceOrder: React.FC = () => {
 
         <div className="flex justify-between px-4 py-2">
           <div className="text-center">
-            <p className="text-xl font-medium">₹{calculateTotal(price, quantity)}</p>
+            <p className="text-xl font-medium">
+              ₹{calculateTotal(price, quantity)}
+            </p>
             <p className="text-slate-500">You {tradeType.toLowerCase()}</p>
           </div>
           <div className="text-center">
-            <p className="text-xl font-medium text-green-600">₹{calculateTotal("10", quantity)}</p>
+            <p className="text-xl font-medium text-green-600">
+              ₹{calculateTotal("10", quantity)}
+            </p>
             <p className="text-slate-500">You get</p>
           </div>
         </div>
@@ -209,7 +210,7 @@ const PlaceOrder: React.FC = () => {
           onClick={handleOrder}
           disabled={error}
           className={`w-full py-4 rounded-xl font-medium text-slate-500 
-            ${error ? 'bg-slate-200' : 'bg-blue-200'}`}
+            ${error ? "bg-slate-200" : "bg-blue-200"}`}
         >
           Place {tradeType} order
         </button>

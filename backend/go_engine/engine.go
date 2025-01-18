@@ -7,7 +7,9 @@ import (
 	typess "engine/types"
 	"fmt"
 	"log"
+	"os"
 
+	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -28,12 +30,33 @@ const (
 	Reset
 	SellOrder
 	CreateUser
+	GetAllMarkets
+	GetAMarket
+	GetUser
 )
 
 var client *redis.Client
 
-func initRedis() {
-	url, err := controller.ENVVariable("REDIS_URL")
+func ENVVariable(key string) (string, error) {
+
+	err1 := godotenv.Load(".env")
+
+	if err1 != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	data := os.Getenv(key)
+
+	if data == "" {
+		return "", fmt.Errorf("ENv Key not foun")
+	}
+
+	return data, nil
+
+}
+
+func InitRedis() {
+	url, err := ENVVariable("REDIS_URL")
 
 	if err != nil {
 		log.Fatalf("Could not parse Redis URL: %v", err)
@@ -82,7 +105,7 @@ func handleReq(reqType ReqType, msg Message, ctx context.Context) {
 
 	case CreateSymbol:
 		log.Println("Processing: CreateSymbol")
-		res, err := controller.CreateSymbol(msg.StockSymbol)
+		res, err := controller.CreateSymbol(msg.StockSymbol, msg.Title)
 		HandleRes(res, err, msg.ID, ctx)
 
 	case GetOrderbook:
@@ -120,6 +143,21 @@ func handleReq(reqType ReqType, msg Message, ctx context.Context) {
 		res, err := controller.CreateUser(msg.UserID)
 		HandleRes(res, err, msg.ID, ctx)
 
+	case GetAllMarkets:
+		log.Println("Processing: GetAllMarkets")
+		res, err := controller.GetAllSymbolAndTitle()
+		HandleRes(res, err, msg.ID, ctx)
+
+	case GetAMarket:
+		log.Println("Processing: GetAMarket")
+		res, err := controller.GetAMarket(msg.StockSymbol)
+		HandleRes(res, err, msg.ID, ctx)
+
+	case GetUser:
+		log.Println("Processing: GetUser")
+		res, err := controller.GetUser(msg.UserID)
+		HandleRes(res, err, msg.ID, ctx)
+
 	default:
 		log.Println("Unknown Request Type")
 	}
@@ -129,7 +167,7 @@ func HandleRes(res string, err error, id string, ctx context.Context) {
 	fmt.Println("hello")
 
 	if client == nil {
-		initRedis()
+		InitRedis()
 	}
 
 	if id == "" {
@@ -157,6 +195,23 @@ func HandleRes(res string, err error, id string, ctx context.Context) {
 		log.Printf("Sending Response: %v \n ", res)
 		log.Printf("End state var: order book %v \n stock book %v \n inrBalance %v \n", typess.ORDER_BOOK, typess.STOCK_BALANCES, typess.INR_BALANCES)
 
+		senData := map[string]interface{}{
+			"type": "event",
+			"data": res,
+		}
+
+		jsonResponse, err := json.Marshal(senData)
+
+		if err != nil {
+			fmt.Printf("Error While Parsing error")
+		}
+
+		resStr := string(jsonResponse)
+
+		if err := client.LPush(ctx, "db", resStr).Err(); err != nil {
+			log.Printf("Failed to publish response: %v", err)
+		}
+
 		if err := client.Publish(ctx, id, res).Err(); err != nil {
 			log.Printf("Failed to publish response: %v", err)
 		}
@@ -169,6 +224,7 @@ type Message struct {
 	Req         int                   `json:"req"`              // Required
 	UserID      string                `json:"userId,omitempty"` // Optional, empty string if missing
 	StockSymbol string                `json:"stockSymbol,omitempty"`
+	Title       string                `json:"title,omitempty"`
 	Quantity    int                   `json:"quantity,omitempty"`
 	Price       int                   `json:"price,omitempty"`
 	Message     string                `json:"message,omitempty"`
@@ -183,8 +239,9 @@ func worker(ctx context.Context, msgCh <-chan Message) {
 }
 
 func main() {
+
 	log.Println(typess.INR_BALANCES, typess.STOCK_BALANCES, typess.ORDER_BOOK)
-	initRedis()
+	InitRedis()
 	ctx := context.Background()
 
 	msgCh := make(chan Message)

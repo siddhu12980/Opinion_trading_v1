@@ -10,7 +10,7 @@ const AppRoutes = () => {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/trade" element={<Trade />} />
-        <Route path='/order' element={<TradeScreen />} />
+        <Route path='/order/:id' element={<TradeScreen />} />
         <Route path='/account' element={<Account />} />
 
       </Routes>

@@ -43,20 +43,25 @@ const userStockSelector = selector({
   },
 });
 
-const userIdSelector = selector<string>({
-  key: "userId",
+//make a selector and sestter for user banalce
+
+export const userBalanceSelector = selector({
+  key: "userBalance",
   get: ({ get }) => {
     const user = get(userState);
-    return user.userId;
+    return user.balance.freeBalances;
   },
-  set: ({ get, set }, userId) => {
-    if (!(userId instanceof DefaultValue)) {
-      const user = get(userState);
-      set(userState, {
-        ...user,
-        userId: userId,
-      });
-    }
+  set: ({ set }, newValue) => {
+    set(userState, (oldUser) => {
+      if (newValue instanceof DefaultValue) return oldUser;
+      return {
+        ...oldUser,
+        balance: {
+          ...oldUser.balance,
+          freeBalances: newValue,
+        },
+      };
+    });
   },
 });
 

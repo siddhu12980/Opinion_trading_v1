@@ -11,10 +11,17 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 )
 
 func ENVVariable(key string) (string, error) {
+
+	err1 := godotenv.Load(".env")
+
+	if err1 != nil {
+		log.Fatalf("Error loading .env file")
+	}
 
 	data := os.Getenv(key)
 
@@ -24,6 +31,48 @@ func ENVVariable(key string) (string, error) {
 
 	return data, nil
 
+}
+
+type SendType map[string]interface{}
+
+func SendToDB(typ typess.ReqTypeString, data SendType) (string, error) {
+
+	url, err := ENVVariable("REDIS_URL")
+
+	if err != nil {
+		log.Fatalf("Could not parse Redis URL: %v", err)
+	}
+
+	opt, redis_err := redis.ParseURL(url)
+
+	if redis_err != nil {
+		log.Printf("Error parsing Redis URL: %v\n", redis_err)
+		return "", redis_err
+	}
+
+	client := redis.NewClient(opt)
+	ctx := context.Background()
+
+	type SendingMessage struct {
+		Type typess.ReqTypeString `json:"type"`
+		Data SendType             `json:"data"`
+	}
+
+	message := SendingMessage{
+		Type: typ,
+		Data: data,
+	}
+
+	jsonData, _ := json.Marshal(message)
+
+	jsonString := string(jsonData)
+
+	if err := client.LPush(ctx, "db", jsonString).Err(); err != nil {
+		log.Printf("Failed to push to Redis: %v\n", err)
+		return "", err
+	}
+
+	return "Success", nil
 }
 
 func Publish(stockSymbol string) {
@@ -108,7 +157,71 @@ func GetAllStockBalance() (string, error) {
 
 }
 
-func CreateSymbol(stockSymbol string) (string, error) {
+func GetAllSymbolAndTitle() (string, error) {
+
+	found := typess.Market
+
+	if found == nil {
+		return CreateJSONResponse("Market Not Found", nil)
+
+	} else {
+
+		var data []map[string]interface{}
+
+		for key, val := range found {
+			if _, exists := typess.ORDER_BOOK[key]; !exists {
+
+				data = append(data, map[string]interface{}{
+					"stockSymbol": key,
+					"title":       val,
+					"orderBook":   nil,
+				})
+			} else {
+				data = append(data, map[string]interface{}{
+					"stockSymbol": key,
+					"title":       val,
+					"orderBook":   typess.ORDER_BOOK[key],
+				})
+
+			}
+
+		}
+
+		return CreateJSONResponse("Success", data)
+	}
+
+}
+
+func GetUser(userId string) (string, error) {
+	if found, exists := typess.INR_BALANCES[userId]; !exists {
+		return CreateJSONResponse("User Not Found", nil)
+	} else {
+		return CreateJSONResponse("Success", found)
+	}
+}
+
+func GetAMarket(stockSymbol string) (string, error) {
+
+	if found, exists := typess.Market[stockSymbol]; !exists {
+
+		return CreateJSONResponse("Market Not Found", nil)
+	} else {
+
+		if _, exists := typess.ORDER_BOOK[stockSymbol]; !exists {
+			return CreateJSONResponse("Order Book Not Found", nil)
+		}
+
+		data := map[string]interface{}{
+			"Market":    found,
+			"OrderBook": typess.ORDER_BOOK[stockSymbol],
+		}
+
+		return CreateJSONResponse("Success", data)
+	}
+
+}
+
+func CreateSymbol(stockSymbol string, title string) (string, error) {
 	if val, exists := typess.ORDER_BOOK[stockSymbol]; !exists {
 		create := typess.OrderBookEntry{
 			Yes: typess.Outcome{},
@@ -117,6 +230,20 @@ func CreateSymbol(stockSymbol string) (string, error) {
 
 		// Add the new entry to the OrderBook
 		typess.ORDER_BOOK[stockSymbol] = create
+
+		// Send the new entry to the database
+		sendingData := map[string]interface{}{
+			"stockSymbol": stockSymbol,
+			"title":       title,
+		}
+
+		if _, exists = typess.Market[stockSymbol]; !exists {
+			typess.Market[stockSymbol] = title
+		}
+
+		if _, err := SendToDB(typess.CreateSymbol, sendingData); err != nil {
+			return "", fmt.Errorf("failed to send to db: %v", err)
+		}
 
 		return CreateJSONResponse("StockSymbol Created", create)
 	} else {
@@ -238,6 +365,15 @@ func Onramp(userId string, amount int32) (string, error) {
 
 		message := fmt.Sprintf("Onramped %v with amout %v", userId, amount/100)
 
+		sendData := map[string]interface{}{
+			"userId": userId,
+			"amount": amount,
+		}
+
+		if _, err := SendToDB(typess.OnRampINR, sendData); err != nil {
+			return "", fmt.Errorf("failed to send to db: %v", err)
+		}
+
 		return CreateJSONResponse(message, typess.INR_BALANCES[userId])
 	}
 
@@ -252,6 +388,14 @@ func Reset() (string, error) {
 		"Stock": typess.STOCK_BALANCES,
 		"INR":   typess.INR_BALANCES,
 		"Order": typess.ORDER_BOOK,
+	}
+
+	sendData := map[string]interface{}{
+		"reset": true,
+	}
+
+	if _, err := SendToDB(typess.Reset, sendData); err != nil {
+		return "", fmt.Errorf("failed to send to db: %v", err)
 	}
 
 	return CreateJSONResponse("Reset Success", data)
@@ -285,6 +429,14 @@ func CreateUser(userId string) (string, error) {
 		}
 
 		log.Print(typess.INR_BALANCES)
+
+		sendData := map[string]interface{}{
+			"userId": userId,
+		}
+
+		if _, err := SendToDB(typess.CreateUser, sendData); err != nil {
+			return "", fmt.Errorf("failed to send to db: %v", err)
+		}
 
 		return CreateJSONResponse("User Created", data)
 	} else {
@@ -492,6 +644,21 @@ func SellOrder(userId string, stockSymbol string, quantity int32, price int32, s
 	go Publish(stockSymbol)
 	log.Println("Sell order placed successfully and published")
 
+	sendData := map[string]interface{}{
+		"userId":       userId,
+		"stockSymbol":  stockSymbol,
+		"quantity":     quantity,
+		"price":        price,
+		"stockType":    stockT,
+		"stockBalance": typess.STOCK_BALANCES[userId],
+		"orderBook":    typess.ORDER_BOOK[stockSymbol],
+		"balance":      typess.INR_BALANCES[userId],
+	}
+
+	if _, err := SendToDB(typess.SellOrder, sendData); err != nil {
+		return "", fmt.Errorf("failed to send to db: %v", err)
+	}
+
 	return CreateJSONResponse("Sell Order Placed", data)
 }
 
@@ -632,6 +799,23 @@ func BuyYesOrder(userID string, stockSymbol string, quantity int32, price int32)
 		"orderBook": typess.ORDER_BOOK[stockSymbol],
 		"stockBook": typess.STOCK_BALANCES[userID],
 		"note":      order_result.Note,
+	}
+
+	sendDatta := map[string]interface{}{
+		"userId":       userID,
+		"stockSymbol":  stockSymbol,
+		"quantity":     quantity,
+		"price":        price,
+		"stockType":    typess.Yes,
+		"stockBalance": typess.STOCK_BALANCES[userID],
+
+		"orderBook": typess.ORDER_BOOK[stockSymbol],
+		"stockBook": typess.STOCK_BALANCES[userID],
+		"note":      order_result.Note,
+	}
+
+	if _, err := SendToDB(typess.BuyYesOrder, sendDatta); err != nil {
+		return "", fmt.Errorf("failed to send to db: %v", err)
 	}
 
 	go Publish(stockSymbol)

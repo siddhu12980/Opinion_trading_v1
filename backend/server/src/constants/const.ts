@@ -13,6 +13,8 @@ export enum reqTypes {
   "onrampINR",
   "reset",
   "sellOrder",
-  "createUser"
+  "createUser",
+  "getAllMarkets",
+  "getAMarket",
+  "getUser"
 }
-

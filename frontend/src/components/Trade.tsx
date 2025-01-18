@@ -25,10 +25,15 @@ export const Trade = () => {
         throw new Error("No data");
       }
 
+      console.log("Balance response", response.data.data);
+
       setUser((prev) => {
         return {
           ...prev,
-          balance: response.data.data,
+          balance: {
+            freeBalances: response.data.data.balance / 100,
+            lockedBalances: response.data.data.locked/ 100,
+          }
         };
       });
 
@@ -48,7 +53,7 @@ export const Trade = () => {
 
   return (
     <>
-      <NavbarUser balance={data.balance} />
+      <NavbarUser balance={user.balance.freeBalances} />
       <EventNavbar />
       <EventComp />
     </>

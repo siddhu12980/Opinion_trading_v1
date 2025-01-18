@@ -63,8 +63,31 @@ type OrderBookEntry struct {
 	No  Outcome `json:"no"`
 }
 
+type market map[string]string
+
 var ORDER_BOOK = map[string]OrderBookEntry{}
 
 var INR_BALANCES = map[string]UserBalance{}
 
 var STOCK_BALANCES = map[string]UserStockBalances{}
+
+var Market = market{}
+
+type ReqTypeString string
+
+const (
+	GetStockBalance    ReqTypeString = "GetStockBalance"
+	GetINRBalance      ReqTypeString = "GetINRBalance"
+	GetAllINRBalance   ReqTypeString = "GetAllINRBalance"
+	BuyNoOrder         ReqTypeString = "BuyNoOrder"
+	BuyYesOrder        ReqTypeString = "BuyYesOrder"
+	GetAllStockBalance ReqTypeString = "GetAllStockBalance"
+	CreateSymbol       ReqTypeString = "CreateSymbol"
+	GetOrderbook       ReqTypeString = "GetOrderbook"
+	GetAllOrderbook    ReqTypeString = "GetAllOrderbook"
+	MintStock          ReqTypeString = "MintStock"
+	OnRampINR          ReqTypeString = "OnRampINR"
+	Reset              ReqTypeString = "Reset"
+	SellOrder          ReqTypeString = "SellOrder"
+	CreateUser         ReqTypeString = "CreateUser"
+)
