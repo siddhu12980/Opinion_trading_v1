@@ -31,8 +31,8 @@ export const Trade = () => {
         return {
           ...prev,
           balance: {
-            freeBalances: response.data.data.balance / 100,
-            lockedBalances: response.data.data.locked/ 100,
+            freeBalances: response.data.data.balance ,
+            lockedBalances: response.data.data.locked,
           }
         };
       });
@@ -53,7 +53,7 @@ export const Trade = () => {
 
   return (
     <>
-      <NavbarUser balance={user.balance.freeBalances} />
+      <NavbarUser balance={data.balance} />
       <EventNavbar />
       <EventComp />
     </>

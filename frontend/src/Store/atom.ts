@@ -23,6 +23,26 @@ export interface UserStockBalances {
   };
 }
 
+const localStorageEffect = (key: string) => ({ setSelf, onSet }: any) => {
+  const savedValue = localStorage.getItem(key);
+
+  // Initialize state with the saved value in localStorage, if it exists
+  if (savedValue != null) {
+    setSelf(JSON.parse(savedValue));
+  }
+
+  // Save changes to localStorage whenever the atom's state changes
+  onSet((newValue: any, _: any, isReset: boolean) => {
+    if (isReset) {
+      localStorage.removeItem(key);
+    } else {
+      localStorage.setItem(key, JSON.stringify(newValue));
+    }
+  });
+};
+
+
+
 const userState = atom<User>({
   key: "user",
   default: {
@@ -33,6 +53,7 @@ const userState = atom<User>({
     },
     stock: {},
   },
+  effects: [localStorageEffect("userState")],
 });
 
 const userStockSelector = selector({
@@ -60,6 +81,23 @@ export const userBalanceSelector = selector({
           ...oldUser.balance,
           freeBalances: newValue,
         },
+      };
+    });
+  },
+});
+export const userIdSelector = selector({
+  key: "userId",
+  get: ({ get }) => {
+    const user = get(userState);
+    return user.userId;
+  },
+  set: ({ set }, newValue) => {
+    set(userState, (oldUser) => {
+      if (newValue instanceof DefaultValue) return oldUser;
+      
+      return {
+        ...oldUser,
+        userId: newValue,
       };
     });
   },

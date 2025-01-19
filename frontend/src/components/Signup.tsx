@@ -1,6 +1,7 @@
 import axios from "axios";
 import React, { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { HTTP_SERVER_URL } from "../constants/const";
 
 interface FormData {
   email: string;
@@ -12,7 +13,7 @@ interface FormData {
 
 async function HandleSignnup(formData: FormData) {
   const response = await axios.post(
-    `http://localhost:3000/api/v1/user/create/${formData.name}`,
+    `${HTTP_SERVER_URL}/user/create/${formData.name}`,
     {
       email: formData.email,
       name: formData.name,

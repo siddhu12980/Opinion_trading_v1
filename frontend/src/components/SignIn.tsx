@@ -1,5 +1,6 @@
 import axios from "axios";
 import React, { useState, FormEvent } from "react";
+import { HTTP_SERVER_URL } from "../constants/const";
 interface FormData {
   name: string;
   password: string;
@@ -15,7 +16,7 @@ interface FormErrors {
 
 async function HandleSigin(formData: FormData) {
   const response = await axios.get(
-    `http://localhost:3000/api/v1/user/get/${formData.name}`,
+    `${HTTP_SERVER_URL}/user/get/${formData.name}`,
     {
       headers: {
         "Content-Type": "application/json",
@@ -90,7 +91,7 @@ const SignIn = ({ onSuccess }: { onSuccess: (userId: string) => void }) => {
           throw new Error("Invalid email or password. Please try again.");
         }
 
-       await onSuccess(user);
+        onSuccess(formData.name);
       } catch (error) {
         setErrors((prev) => ({
           ...prev,

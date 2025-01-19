@@ -1,9 +1,9 @@
-import { useNavigate } from "react-router-dom";
 import ScrollCard from "./ScrollCard";
 import { useQuery } from "react-query";
 import axios from "axios";
 import { useState } from "react";
 import MainStory from "./MainStory";
+import { HTTP_SERVER_URL } from "../constants/const";
 
 export interface Stockdata {
   stockSymbol: string;
@@ -29,25 +29,17 @@ export interface OrderBookEntry {
 }
 
 export default function EventComp() {
-  const nagivate = useNavigate();
 
   const [sotckData, setStockData] = useState<Stockdata[] | null>(null);
-
-  const description = {
-    yes: "probability of yes",
-    no: "probability of no",
-  };
 
   const res = useQuery({
     queryKey: ["event"],
     queryFn: async () => {
       const response = await axios.get(
-        `http://localhost:3000/api/v1/symbol/all`
+        `${HTTP_SERVER_URL}/symbol/all`
       );
 
-      if (!response.data.data) {
-        throw new Error("No data");
-      }
+      console.log("Fn res", response.data);
 
       setStockData(response.data.data);
 
@@ -69,7 +61,7 @@ export default function EventComp() {
 
   return (
     <section className="mx-6 mt-5 space-y-9">
-      <div className="flex flex-col lg:flex-row justify-center lg:gap-x-32 space-y-8 lg:space-y-0">
+      <div className="flex flex-col lg:flex-row justify-center lg:gap-x-32   space-y-8 lg:space-y-0">
         {/* Top Stories Section */}
         <div className="flex flex-col max-w-xl space-y-2">
           <h1 className="font-work-sans font-semibold text-left">

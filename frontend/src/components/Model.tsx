@@ -1,15 +1,16 @@
 import { motion, AnimatePresence } from "framer-motion";
 import SignIn from "./SignIn";
 import Signup from "./Signup";
-import { useEffect, useId } from "react";
+import { useEffect } from "react";
 import { useRecoilState } from "recoil";
-import { userState } from "../Store/atom";
+import { userIdSelector, userState } from "../Store/atom";
 import { useNavigate } from "react-router-dom";
 
 export const Modal = ({ isOpen, onClose, mode }: any) => {
   const navigate = useNavigate();
-  const [user, setUser] = useRecoilState(userState);
-  console.log(user);
+
+  const [userId, setUserId] = useRecoilState(userIdSelector);
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -28,13 +29,16 @@ export const Modal = ({ isOpen, onClose, mode }: any) => {
     };
   }, [onClose]);
 
-  const handleSignInSuccess = async (userId: string) => {
+  const handleSignInSuccess = async (userId1: string) => {
+    console.log("Old user id", userId);
 
-    console.log("User signed in");
 
-    await localStorage.setItem("userId", userId);
-    setUser((prev) => ({ ...prev, userId: userId }));
+    console.log("User signed in", userId1);
 
+    await new Promise((resolve) => {
+      setUserId(userId1);
+      resolve(true);
+    });
 
     navigate("/trade");
   };
@@ -63,9 +67,17 @@ export const Modal = ({ isOpen, onClose, mode }: any) => {
                   <button onClick={onClose}>X</button>
                 </div>
                 {mode === "signin" ? (
-                  <SignIn onSuccess={handleSignInSuccess} />
+                  <SignIn
+                    onSuccess={(userId: string) => {
+                      handleSignInSuccess(userId);
+                    }}
+                  />
                 ) : (
-                  <Signup onSuccess={handleSignInSuccess} />
+                  <Signup
+                    onSuccess={(userId: string) => {
+                      handleSignInSuccess(userId);
+                    }}
+                  />
                 )}
               </div>
             </div>

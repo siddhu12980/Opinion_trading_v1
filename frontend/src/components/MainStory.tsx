@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 const MainStory = ({ data }: { data: Stockdata }) => {
   const navigate = useNavigate();
 
-  let firstYesPrice = "5";
+  let firstYesPrice = "500";
 
   let YesPrice = Object.keys(data.orderBook.yes); // First key
 
@@ -12,7 +12,7 @@ const MainStory = ({ data }: { data: Stockdata }) => {
     firstYesPrice = YesPrice[0];
   }
 
-  let firstNoPrice = "5";
+  let firstNoPrice = "500";
 
   let NoPrice = Object.keys(data.orderBook.no); // First key
 
@@ -21,15 +21,15 @@ const MainStory = ({ data }: { data: Stockdata }) => {
   }
 
   const calculatePercentage = () => {
-    return parseFloat(firstYesPrice) > parseFloat(firstNoPrice)
-      ? parseFloat(firstYesPrice) * 10
-      : parseFloat(firstNoPrice) * 10;
+    return parseFloat(firstYesPrice) > parseFloat(firstNoPrice) 
+      ? parseFloat(firstYesPrice) / 10 
+      : parseFloat(firstNoPrice)  / 10;
   };
 
   function FindHigh(yes: string, no: string) {
-    const yes1 = parseFloat(yes);
+    const yes1 = parseFloat(yes) ;
 
-    const no1 = parseFloat(no);
+    const no1 = parseFloat(no) ;
 
     if (yes1 > no1) return true;
 
@@ -71,13 +71,13 @@ const MainStory = ({ data }: { data: Stockdata }) => {
                 type="button"
                 className="flex-1 sm:flex-none inline-flex items-center justify-center whitespace-nowrap text-white bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600 hover:from-blue-500 hover:to-blue-700 focus:ring-4 focus:ring-blue-200 font-medium rounded-lg text-sm px-8 py-2.5 transition-all duration-200 shadow-md hover:shadow-lg"
               >
-                Yes ₹{firstYesPrice}
+                Yes ₹{( parseFloat(firstYesPrice))/100} 
               </button>
               <button
                 type="button"
                 className="flex-1 sm:flex-none inline-flex items-center justify-center whitespace-nowrap text-white bg-gradient-to-r from-red-400 via-red-500 to-red-600 hover:from-red-500 hover:to-red-700 focus:ring-4 focus:ring-red-200 font-medium rounded-lg text-sm px-8 py-2.5 transition-all duration-200 shadow-md hover:shadow-lg"
               >
-                No ₹{firstNoPrice}
+                No ₹{( parseFloat(firstNoPrice))/100}
               </button>
             </div>
           </div>
@@ -127,6 +127,8 @@ const MainStory = ({ data }: { data: Stockdata }) => {
             />
           </div>
         </div>
+
+        
       </div>
     </div>
   );

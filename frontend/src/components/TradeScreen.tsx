@@ -5,7 +5,7 @@ import OrderBook from "./OrderBook";
 import Tradeheader from "./Tradeheader";
 import { userState } from "../Store/atom";
 import { useEffect, useState } from "react";
-import { WS_SERVER_URL } from "../constants/const";
+import { HTTP_SERVER_URL, WS_SERVER_URL } from "../constants/const";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import PlaceOrder from "./PlaceOrder";
@@ -74,6 +74,9 @@ const TradeScreen = () => {
   const [ans_data, set_data] = useState<WsData | null>(null);
   const tradeSymbol = parms.id;
 
+
+  
+
   if (!user.userId) {
     return <span>Not logged in</span>;
   }
@@ -85,12 +88,22 @@ const TradeScreen = () => {
   async function checkTradeSymbol() {
     try {
       const response = await axios.get(
-        `http://localhost:3000/api/v1/symbol/get/${tradeSymbol}`
+        `${HTTP_SERVER_URL}/symbol/get/${tradeSymbol}`
       );
 
       if (!response.data.data) {
         throw new Error("No data");
       }
+
+      const orderBook = response.data.data.OrderBook;
+
+      if (!orderBook) {
+        throw new Error("No order book");
+      }
+
+      const transformed = transform(orderBook);
+
+      set_data(transformed);
 
       return response.data.data;
     } catch (error) {
@@ -118,7 +131,7 @@ const TradeScreen = () => {
 
           conn.onmessage = (message) => {
             const res = JSON.parse(message.data);
-            console.log(res.message);
+            console.log("Message received", res.message);
             const ws_transformed = transform(res.message);
             console.log("ans:", ws_transformed);
             set_data(ws_transformed);

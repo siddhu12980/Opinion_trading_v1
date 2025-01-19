@@ -1,7 +1,9 @@
-import {  Stockdata } from "./EventComp";
+import { useNavigate } from "react-router-dom";
+import { Stockdata } from "./EventComp";
 
 export default function ScrollCard({ data }: { data: Stockdata }) {
   console.log("Data ScrollCard", data);
+  const navigate = useNavigate();
   let firstYesPrice = "5";
 
   let YesPrice = Object.keys(data.orderBook.yes); // First key
@@ -19,7 +21,10 @@ export default function ScrollCard({ data }: { data: Stockdata }) {
   }
 
   return (
-    <div className="flex flex-col bg-white border shadow-sm rounded-xl p-4 md:p-5  cursor-pointer ">
+    <div
+      className="flex flex-col bg-white border shadow-sm rounded-xl p-4 md:p-5  cursor-pointer  "
+      onClick={() => navigate(`/order/${data.stockSymbol}`)}
+    >
       <img
         height="60px"
         width="60px"
@@ -34,7 +39,7 @@ export default function ScrollCard({ data }: { data: Stockdata }) {
           alt=""
         />{" "}
         <h1 className="text-sm text-[#545454] font-work-sans">
-              {YesPrice.length} Trades
+          {YesPrice.length} Trades
         </h1>
       </div>
 

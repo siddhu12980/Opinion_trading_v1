@@ -32,3 +32,103 @@ export const validateSell = (
 
   return quantityNum <= stockQuantity;
 };
+
+
+
+export type OrderBookInput = {
+  orderBook: {
+    yes: {
+      [price: string]: {
+        total: number;
+        orders: {
+          [userId: string]: {
+            normal: number;
+            inverse: number;
+          };
+        };
+      };
+    };
+    no: {
+      [price: string]: {
+        total: number;
+        orders: {
+          [userId: string]: {
+            normal: number;
+            inverse: number;
+          };
+        };
+      };
+    };
+  };
+  stockSymbol: string;
+  title: string;
+};
+
+export type ProcessedOrder = {
+  stockSymbol: string;
+  title: string;
+  type: "yes" | "no";
+  price: number;
+  quantity: number;
+};
+
+export const processOrderBooks = (
+  data: OrderBookInput[],
+  userId: string
+): ProcessedOrder[] => {
+  const result: ProcessedOrder[] = [];
+
+  data.forEach(({ orderBook, stockSymbol, title }) => {
+    // Process "yes" orders
+    Object.entries(orderBook.yes).forEach(([price, details]) => {
+      const userOrders = details.orders[userId];
+      if (userOrders) {
+        if (userOrders.normal > 0) {
+          result.push({
+            stockSymbol,
+            title,
+            type: "yes",
+            price: parseInt(price), // Parse price from string to number
+            quantity: userOrders.normal,
+          });
+        }
+        if (userOrders.inverse > 0) {
+          result.push({
+            stockSymbol,
+            title,
+            type: "no",
+            price: 1000 - parseInt(price), // Adjust price for inverse
+            quantity: userOrders.inverse,
+          });
+        }
+      }
+    });
+
+    // Process "no" orders
+    Object.entries(orderBook.no).forEach(([price, details]) => {
+      const userOrders = details.orders[userId];
+      if (userOrders) {
+        if (userOrders.normal > 0) {
+          result.push({
+            stockSymbol,
+            title,
+            type: "no",
+            price: parseInt(price), // Parse price from string to number
+            quantity: userOrders.normal,
+          });
+        }
+        if (userOrders.inverse > 0) {
+          result.push({
+            stockSymbol,
+            title,
+            type: "yes",
+            price: 1000 - parseInt(price), // Adjust price for inverse
+            quantity: userOrders.inverse,
+          });
+        }
+      }
+    });
+  });
+
+  return result;
+};
