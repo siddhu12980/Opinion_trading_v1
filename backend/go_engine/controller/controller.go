@@ -11,17 +11,10 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 )
 
 func ENVVariable(key string) (string, error) {
-
-	err1 := godotenv.Load(".env")
-
-	if err1 != nil {
-		log.Fatalf("Error loading .env file")
-	}
 
 	data := os.Getenv(key)
 

@@ -7,9 +7,7 @@ import (
 	typess "engine/types"
 	"fmt"
 	"log"
-	"os"
 
-	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -37,26 +35,8 @@ const (
 
 var client *redis.Client
 
-func ENVVariable(key string) (string, error) {
-
-	err1 := godotenv.Load(".env")
-
-	if err1 != nil {
-		log.Fatalf("Error loading .env file")
-	}
-
-	data := os.Getenv(key)
-
-	if data == "" {
-		return "", fmt.Errorf("ENv Key not foun")
-	}
-
-	return data, nil
-
-}
-
 func InitRedis() {
-	url, err := ENVVariable("REDIS_URL")
+	url, err := controller.ENVVariable("REDIS_URL")
 
 	if err != nil {
 		log.Fatalf("Could not parse Redis URL: %v", err)
