@@ -3,7 +3,7 @@ import SignIn from "./SignIn";
 import Signup from "./Signup";
 import { useEffect } from "react";
 import { useRecoilState } from "recoil";
-import { userIdSelector, userState } from "../Store/atom";
+import { userIdSelector } from "../Store/atom";
 import { useNavigate } from "react-router-dom";
 
 export const Modal = ({ isOpen, onClose, mode }: any) => {
