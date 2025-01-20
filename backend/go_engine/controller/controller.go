@@ -16,6 +16,8 @@ import (
 
 func ENVVariable(key string) (string, error) {
 
+	// godotenv.Load(".env")
+
 	data := os.Getenv(key)
 
 	if data == "" {
@@ -716,7 +718,7 @@ func BuyNoOrder(userID string, stockSymbol string, quantity int32, price int32) 
 
 	// result, err := ProcessNoOrder(op, noOrders, yesOrders, &userBalance)
 
-	typess.INR_BALANCES[userID] = userBalance
+	// typess.INR_BALANCES[userID] = userBalance
 
 	data := map[string]interface{}{
 		"orderBook": typess.ORDER_BOOK[stockSymbol],
@@ -767,7 +769,6 @@ func BuyYesOrder(userID string, stockSymbol string, quantity int32, price int32)
 	yesOrders := &orderBook.Yes
 
 	// result, err := ProcessYesOrder(op, noOrders, yesOrders, &userBalance)
-
 	existingOrders, hasMatchingOrders := (*yesOrders)[op.PriceStr]
 
 	fmt.Print("checking matching orders in Yes", hasMatchingOrders)

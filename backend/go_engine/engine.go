@@ -36,6 +36,7 @@ const (
 var client *redis.Client
 
 func InitRedis() {
+
 	url, err := controller.ENVVariable("REDIS_URL")
 
 	if err != nil {

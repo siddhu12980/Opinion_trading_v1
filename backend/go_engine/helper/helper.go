@@ -112,84 +112,6 @@ func HandleSellTransfer(
 	return nil
 }
 
-// func HandleSellTransfer(
-// 	seller2 string,
-// 	seller string,
-// 	stockSymbol string,
-// 	stockType typess.OrderTypeYesNo, //main Seller le bechi ra ko kun ho tyo
-// 	quantity int32,
-// 	price int32,
-// ) error {
-// 	if quantity <= 0 {
-// 		return errors.New("quantity must be positive")
-// 	}
-
-// 	if price <= 0 {
-// 		return errors.New("price must be positive")
-// 	}
-
-// 	seller2Stocks, exists := typess.STOCK_BALANCES[seller2]
-
-// 	if !exists {
-// 		return fmt.Errorf("seller2 stock balance not found")
-// 	}
-
-// 	if _, exists := seller2Stocks[stockSymbol]; !exists {
-// 		return fmt.Errorf("seller 2 dont have that stock Symbol")
-// 	}
-
-// 	sellerStocks, exists := typess.STOCK_BALANCES[seller]
-
-// 	if !exists {
-// 		return fmt.Errorf("seller Stock Balance Doesnot Exists")
-// 	}
-
-// 	if _, exists := sellerStocks[stockSymbol]; !exists {
-// 		return fmt.Errorf("seller Stock Balance Dont Have this Stock")
-// 	}
-
-// 	var seller2Stock *typess.Stock
-
-// 	if stockType == typess.Yes {
-// 		seller2Stock = seller2Stocks[stockSymbol].No
-// 	} else if stockType == typess.NO {
-// 		seller2Stock = seller2Stocks[stockSymbol].Yes
-// 	} else {
-// 		return errors.New("yes No not matched inside HandleStock Transfer ")
-// 	}
-
-// 	effectiveStockType := stockType
-
-// 	var sellerStock *typess.Stock
-
-// 	if effectiveStockType == typess.Yes {
-// 		sellerStock = sellerStocks[stockSymbol].Yes
-// 	} else {
-// 		sellerStock = sellerStocks[stockSymbol].No
-// 	}
-
-// 	sellerStock.Quantity -= quantity
-// 	seller2Stock.Quantity -= quantity
-
-// 	seller2Balance := typess.INR_BALANCES[seller2]
-// 	sellerBalance := typess.INR_BALANCES[seller]
-
-// 	totalCost_for_seller := quantity * price
-// 	totalCost_for_seller2 := quantity * (1000 - price)
-
-// 	seller2Balance.Balance += totalCost_for_seller2
-// 	sellerBalance.Balance += totalCost_for_seller
-
-// 	typess.INR_BALANCES[seller2] = seller2Balance
-// 	typess.INR_BALANCES[seller] = sellerBalance
-
-// 	fmt.Printf(" \n Seller1 Balance %v , %v \n Seller 2Balance %v \n", seller2Balance, typess.INR_BALANCES[seller2], sellerBalance)
-
-// 	fmt.Printf("\n Seller1 stock %v \n Seller2 stock %v \n", seller2Stock, sellerStock)
-
-// 	return nil
-// }
-
 func HandleStockTransfer(
 	buyer string,
 	seller string,
@@ -273,7 +195,9 @@ func HandleStockTransfer(
 	}
 
 	if isInverse {
-		totalCost := quantity * price
+
+		totalCost := int32(quantity) * int32(price)
+
 		buyerBalance, buyerExists := typess.INR_BALANCES[buyer]
 		sellerBalance, sellerExists := typess.INR_BALANCES[seller]
 
@@ -287,7 +211,12 @@ func HandleStockTransfer(
 		}
 
 		// Update balances and stocks
+
+		fmt.Printf("\n \n \n Before transaction: BuyerBalance: %+v, SellerBalance: %+v\n", buyerBalance, sellerBalance)
+		fmt.Printf("\n TotalCost: %d, Buyer: %s, Seller: %s\n", totalCost, buyer, seller)
+
 		buyerBalance.Balance -= totalCost
+
 		sellerBalance.Locked -= (1000 - price) * quantity
 
 		buyerStock.Quantity += quantity
@@ -309,6 +238,7 @@ func HandleStockTransfer(
 		sellerBalance := typess.INR_BALANCES[seller]
 
 		totalCost := quantity * price
+
 		buyerBalance.Balance -= totalCost
 		sellerBalance.Balance += totalCost
 
@@ -446,6 +376,7 @@ func CreateNewInverseOrder(
 	data.Total += int(op.Quantity)
 
 	newBalance := UpdateUserBalance(*userBalance, op.Quantity, op.Price)
+
 	*userBalance = newBalance
 
 	return &typess.ProcessResult{
