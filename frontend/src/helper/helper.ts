@@ -1,29 +1,32 @@
 export const calculateTotal = (price: string, quantity: string): string => {
-    const priceNum = Number(price);
-    const quantityNum = Number(quantity);
-    return isNaN(priceNum) || isNaN(quantityNum)
-        ? "0.0"
-        : (priceNum * quantityNum).toFixed(1);
+  const priceNum = Number(price);
+  const quantityNum = Number(quantity);
+  return isNaN(priceNum) || isNaN(quantityNum)
+    ? "0.0"
+    : (priceNum * quantityNum).toFixed(1);
 };
 
-export const validateBuy = (price: string, balance: number, quantity: string): boolean => {
-    const priceNum = Number(price);
-    if (isNaN(priceNum) || priceNum <= 0) {
-        return false;
-    }
+export const validateBuy = (
+  price: string,
+  balance: number,
+  quantity: string
+): boolean => {
+  const priceNum = Number(price);
+  if (isNaN(priceNum) || priceNum <= 0) {
+    return false;
+  }
 
-    if (priceNum >= 10) {
-        return false
-    }
+  if (priceNum >= 10) {
+    return false;
+  }
 
-    const total = Number(calculateTotal(price, quantity));
-    return !(total === 0 || total > balance);
+  const total = Number(calculateTotal(price, quantity));
+  return !(total === 0 || total > balance);
 };
-
 
 export const validateSell = (
   quantity: string,
-  stockQuantity: number,
+  stockQuantity: number
 ): boolean => {
   const quantityNum = Number(quantity);
   if (isNaN(quantityNum) || quantityNum <= 0) {
@@ -32,8 +35,6 @@ export const validateSell = (
 
   return quantityNum <= stockQuantity;
 };
-
-
 
 export type OrderBookInput = {
   orderBook: {
@@ -70,6 +71,7 @@ export type ProcessedOrder = {
   type: "yes" | "no";
   price: number;
   quantity: number;
+  buy: boolean;
 };
 
 export const processOrderBooks = (
@@ -82,6 +84,7 @@ export const processOrderBooks = (
     // Process "yes" orders
     Object.entries(orderBook.yes).forEach(([price, details]) => {
       const userOrders = details.orders[userId];
+
       if (userOrders) {
         if (userOrders.normal > 0) {
           result.push({
@@ -90,6 +93,7 @@ export const processOrderBooks = (
             type: "yes",
             price: parseInt(price), // Parse price from string to number
             quantity: userOrders.normal,
+            buy: false,
           });
         }
         if (userOrders.inverse > 0) {
@@ -99,6 +103,7 @@ export const processOrderBooks = (
             type: "no",
             price: 1000 - parseInt(price), // Adjust price for inverse
             quantity: userOrders.inverse,
+            buy: true,
           });
         }
       }
@@ -115,6 +120,7 @@ export const processOrderBooks = (
             type: "no",
             price: parseInt(price), // Parse price from string to number
             quantity: userOrders.normal,
+            buy: true,
           });
         }
         if (userOrders.inverse > 0) {
@@ -124,6 +130,7 @@ export const processOrderBooks = (
             type: "yes",
             price: 1000 - parseInt(price), // Adjust price for inverse
             quantity: userOrders.inverse,
+            buy: false,
           });
         }
       }

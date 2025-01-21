@@ -1,4 +1,4 @@
-import { Stockdata } from "./EventComp";
+import { Stockdata } from "./Home/EventComp";
 import { useNavigate } from "react-router-dom";
 
 const MainStory = ({ data }: { data: Stockdata }) => {

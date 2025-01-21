@@ -1,11 +1,11 @@
-import EventComp from "./EventComp";
-import EventNavbar from "./EventNavbar";
 import NavbarUser from "./NavbarUser";
 import axios from "axios";
-import { HTTP_SERVER_URL } from "../constants/const";
 import { useRecoilState } from "recoil";
 import { useQuery } from "react-query";
-import { userState } from "../Store/atom";
+import { userState } from "../../Store/atom";
+import { HTTP_SERVER_URL } from "../../constants/const";
+import EventNavbar from "./EventNavbar";
+import EventComp from "./EventComp";
 
 export const Trade = () => {
   const [user, setUser] = useRecoilState(userState);
@@ -31,9 +31,9 @@ export const Trade = () => {
         return {
           ...prev,
           balance: {
-            freeBalances: response.data.data.balance ,
-            lockedBalances: response.data.data.locked,
-          }
+            freeBalances: response.data.data.balance / 100,
+            lockedBalances: response.data.data.locked / 100,
+          },
         };
       });
 
@@ -53,7 +53,7 @@ export const Trade = () => {
 
   return (
     <>
-      <NavbarUser balance={data.balance} />
+      <NavbarUser />
       <EventNavbar />
       <EventComp />
     </>

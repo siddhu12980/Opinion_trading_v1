@@ -1,6 +1,5 @@
 import React from "react";
-import { ProcessedOrder } from "../helper/helper";
-
+import { ProcessedOrder } from "../../helper/helper";
 type TransactionsListProps = {
   orders: ProcessedOrder[];
 };
@@ -13,12 +12,33 @@ const Txn: React.FC<TransactionsListProps> = ({ orders }) => {
     }).format(amount / 100);
   };
 
+  if (!orders || orders.length === 0) {
+    return (
+      <div className="w-full max-w-4xl mx-auto p-4 border-b-4  ">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">Orders</h2>
+          <div className="flex gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
+              <span className="text-sm text-gray-600">Yes Orders</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-red-500"></div>
+              <span className="text-sm text-gray-600">No Orders</span>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-center h-96">
+          <h3 className="text-lg font-semibold text-gray-800">No Orders</h3>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-4xl mx-auto p-4 border-b-4  ">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">
-          Transaction History
-        </h2>
+        <h2 className="text-2xl font-bold text-gray-800">Orders</h2>
         <div className="flex gap-4">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
@@ -30,7 +50,6 @@ const Txn: React.FC<TransactionsListProps> = ({ orders }) => {
           </div>
         </div>
       </div>
-
 
       <div className="space-y-4 overflow-scroll   lg:h-96 no-scrollbar ">
         {orders.map((order, index) => (
@@ -57,7 +76,10 @@ const Txn: React.FC<TransactionsListProps> = ({ orders }) => {
                         // order.type === "yes"
                         //   ? "M7 14l5-5 5 5H7z" // Up arrow for buy
                         //   : "M7 10l5 5 5-5H7z" // Down arrow for sell
-                        "M7 14l5-5 5 5H7z"
+
+                        order.buy
+                          ? "M7 14l5-5 5 5H7z" // Up arrow for buy
+                          : "M7 10l5 5 5-5H7z" // Down arrow for sell
                       }
                     />
                   </svg>
@@ -66,8 +88,10 @@ const Txn: React.FC<TransactionsListProps> = ({ orders }) => {
                 <div className="flex-grow">
                   <div className="flex items-center gap-2">
                     <h3 className="text-lg font-semibold text-gray-800">
-                   {/* limit the title to 10 chars if not do elliplse */}
-                      { order.stockSymbol.length > 10 ? order.stockSymbol.substring(0, 10) + '...' : order.stockSymbol }
+                      {/* limit the title to 10 chars if not do elliplse */}
+                      {order.stockSymbol.length > 10
+                        ? order.stockSymbol.substring(0, 10) + "..."
+                        : order.stockSymbol}
                     </h3>
                     <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
                       {order.stockSymbol}
@@ -76,7 +100,7 @@ const Txn: React.FC<TransactionsListProps> = ({ orders }) => {
                   <div className="mt-1 text-sm text-gray-500">
                     {new Date().toLocaleDateString()} •{" "}
                     {/* {order.type === "yes" ? "Buy" : "Sell"} Order */}
-                    Buy Order
+                    {order.buy ? "Buy" : "Sell"} Order
                   </div>
                 </div>
 
@@ -99,8 +123,6 @@ const Txn: React.FC<TransactionsListProps> = ({ orders }) => {
           </div>
         ))}
       </div>
-
-
     </div>
   );
 };

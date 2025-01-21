@@ -1,14 +1,14 @@
 import { useRecoilValue } from "recoil";
-import NavbarUser from "./NavbarUser";
 import OrderBook from "./OrderBook";
 // import PlaceOrder from "./PlaceOrder";
 import Tradeheader from "./Tradeheader";
-import { userState } from "../Store/atom";
+import { userState } from "../../Store/atom";
 import { useEffect, useState } from "react";
-import { HTTP_SERVER_URL, WS_SERVER_URL } from "../constants/const";
+import { HTTP_SERVER_URL, WS_SERVER_URL } from "../../constants/const";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import PlaceOrder from "./PlaceOrder";
+import NavbarUser from "../Home/NavbarUser";
 
 interface StockData {
   price: number;
@@ -73,9 +73,6 @@ const TradeScreen = () => {
 
   const [ans_data, set_data] = useState<WsData | null>(null);
   const tradeSymbol = parms.id;
-
-
-  
 
   if (!user.userId) {
     return <span>Not logged in</span>;
@@ -150,7 +147,7 @@ const TradeScreen = () => {
 
   return (
     <>
-      <NavbarUser balance={user.balance.freeBalances || 0} />
+      <NavbarUser />
       <div className="flex flex-col  pt-5 ">
         <div>
           <Tradeheader tile={title} />

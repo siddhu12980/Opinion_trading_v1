@@ -2,8 +2,8 @@ import ScrollCard from "./ScrollCard";
 import { useQuery } from "react-query";
 import axios from "axios";
 import { useState } from "react";
+import { HTTP_SERVER_URL } from "../../constants/const";
 import MainStory from "./MainStory";
-import { HTTP_SERVER_URL } from "../constants/const";
 
 export interface Stockdata {
   stockSymbol: string;
@@ -103,7 +103,7 @@ export default function EventComp() {
           All Events
         </h2>
         {sotckData && sotckData.length >= 2 ? (
-          <div className="grid grid-cols-2 gap-3 mt-4">
+          <div className="grid md:grid-cols-2 gap-3 pt-4 ">
             {sotckData && sotckData.length > 1 ? (
               sotckData
                 .slice(1)

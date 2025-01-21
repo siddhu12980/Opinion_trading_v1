@@ -1,20 +1,20 @@
 import { useEffect, useState } from "react";
 import { AlertCircle, ChevronDown } from "lucide-react";
-import { HTTP_SERVER_URL } from "../constants/const";
+import { useRecoilState, useRecoilValue } from "recoil";
 import {
   userBalanceSelector,
   userState,
   userStockSelector,
-} from "../Store/atom";
-import { useRecoilState, useRecoilValue } from "recoil";
+} from "../../Store/atom";
+import { OrderType, TradeType } from "../../Types/types";
+import { calculateTotal, validateBuy, validateSell } from "../../helper/helper";
 import axios from "axios";
-import { useQueryClient } from "react-query";
-import { OrderType, TradeType } from "../Types/types";
-import { calculateTotal, validateBuy, validateSell } from "../helper/helper";
-import { ActionButton, NumberInput } from "../helper/Helper_comp";
+import { HTTP_SERVER_URL } from "../../constants/const";
+import { queryClient } from "../../App";
+import { toast } from "sonner";
+import { ActionButton, NumberInput } from "../../helper/Helper_comp";
 
 const PlaceOrder = ({ stockSymbol }: { stockSymbol: string }) => {
-  const queryClient = useQueryClient();
   const user = useRecoilValue(userState);
   const [freeBalances, setFreeBalance] = useRecoilState(userBalanceSelector);
   const userStocks = useRecoilValue(userStockSelector);
@@ -25,27 +25,43 @@ const PlaceOrder = ({ stockSymbol }: { stockSymbol: string }) => {
   const [selectedType, setSelectedType] = useState<OrderType>("Yes");
   const [tradeType, setTradeType] = useState<TradeType>("Buy");
 
-  const validateOrder = () => {
-    const stockSymbol = "btc";
-
-    let currentStockQuantity;
-
-    if (userStocks[stockSymbol]) {
-      if (selectedType == "No") {
-        currentStockQuantity = userStocks[stockSymbol].no?.quantity ?? 0;
-      } else {
-        currentStockQuantity = userStocks[stockSymbol].yes?.quantity ?? 0;
-      }
-    } else {
-      currentStockQuantity = 0;
-    }
-
+  const validateOrder = async () => {
     if (tradeType === "Buy") {
       const isValid = validateBuy(price, freeBalances || 0, quantity);
       setError(!isValid);
       setErrorMessage(isValid ? "" : "Insufficient balance");
       return isValid;
     } else {
+      let currentStockQuantity = 0;
+
+      try {
+        const getUserStockDetails = await axios.get(
+          `${HTTP_SERVER_URL}/balance/stock/${user.userId}`
+        );
+
+        console.log("User stock details", getUserStockDetails.data);
+
+        const stockData = getUserStockDetails.data.data;
+
+        if (!stockData) {
+          throw new Error("No data");
+        }
+
+        const userStockDetails = stockData[stockSymbol];
+
+        if (!userStockDetails) {
+          throw new Error("No data");
+        }
+
+        if (selectedType == "No") {
+          currentStockQuantity = userStockDetails.no?.quantity ?? 0;
+        } else {
+          currentStockQuantity = userStockDetails.yes?.quantity ?? 0;
+        }
+      } catch (error) {
+        console.error("Error fetching user stock details", error);
+      }
+
       const isValid = validateSell(quantity, currentStockQuantity);
       setError(!isValid);
       setErrorMessage(isValid ? "" : "Insufficient stock quantity");
@@ -105,6 +121,26 @@ const PlaceOrder = ({ stockSymbol }: { stockSymbol: string }) => {
       }
 
       if (tradeType == "Sell") {
+        try {
+          const sellResposne = await axios.post(
+            `${HTTP_SERVER_URL}/order/sell`,
+            {
+              userId: user.userId,
+              stockSymbol: stockSymbol,
+              quantity: parseInt(quantity),
+              price: parseFloat(price) * 100,
+              stockType: selectedType.toLowerCase(),
+            }
+          );
+
+          if (sellResposne.status == 200) {
+            toast.success("Order placed successfully");
+          }
+        } catch (error) {
+          console.error("Order error:", error);
+          toast.error("Error placing order");
+        }
+
         console.log(tradeType, quantity, freeBalances, price, selectedType);
       }
     }

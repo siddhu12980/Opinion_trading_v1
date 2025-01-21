@@ -1,6 +1,6 @@
 import axios from "axios";
 import React, { useState, FormEvent } from "react";
-import { HTTP_SERVER_URL } from "../constants/const";
+import { HTTP_SERVER_URL } from "../../constants/const";
 interface FormData {
   name: string;
   password: string;

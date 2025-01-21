@@ -1,14 +1,14 @@
 import { useState } from "react"
-import { Bichar } from "./Bichar"
-import Box from "./Box"
-import { Care } from "./Care"
-import Download from "./Download"
+import { Bichar } from "../Landing/Bichar"
+import Box from "../Landing/Box"
+import { Care } from "../Landing/Care"
+import Download from "../Landing/Download"
 import Footer from "./Footer"
 import { Hero } from "./Hero"
 import Navbar from "./Navbar"
-import Nazar from "./Nazar"
-import { Slider } from "./Slider"
-import { Modal } from "./Model"
+import Nazar from "../Landing/Nazar"
+import { Slider } from "../Landing/Slider"
+import { Modal } from "../Auth/Model"
 
 const Home = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);

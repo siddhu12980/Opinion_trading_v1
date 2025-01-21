@@ -1,7 +1,8 @@
 import axios from "axios";
 import React, { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { HTTP_SERVER_URL } from "../constants/const";
+import { toast } from "sonner";
+import { HTTP_SERVER_URL } from "../../constants/const";
 
 interface FormData {
   email: string;
@@ -28,11 +29,16 @@ async function HandleSignnup(formData: FormData) {
 
   if (response.status === 200) {
     console.log(response.data);
+
     if (response.data.data) {
       return formData.name;
+    } else {
+      if (response.data.message) {
+        throw new Error(response.data.message);
+      } else {
+        throw new Error("Failed to create account. Please try again.");
+      }
     }
-  } else {
-    throw new Error("Invalid email or password. Please try again.");
   }
 }
 
@@ -123,12 +129,23 @@ const Signup = ({ onSuccess }: { onSuccess: (userId: string) => void }) => {
           throw new Error("Failed to create account. Please try again.");
         }
 
-        onSuccess(user!);
+        onSuccess(user);
       } catch (error) {
-        setErrors((prev) => ({
-          ...prev,
-          submit: "Failed to create account. Please try again.",
-        }));
+        if (error instanceof Error) {
+          setErrors((prev) => ({
+            ...prev,
+            submit: error.message,
+          }));
+
+          toast.error(error.message);
+        } else {
+          setErrors((prev) => ({
+            ...prev,
+            submit: "Failed to create account. Please try again.",
+          }));
+
+          toast.error("Failed to create account. Please try again.");
+        }
       }
     }
 

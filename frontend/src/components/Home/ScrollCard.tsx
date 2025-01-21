@@ -9,7 +9,8 @@ export default function ScrollCard({ data }: { data: Stockdata }) {
   let YesPrice = Object.keys(data.orderBook.yes); // First key
 
   if (YesPrice.length > 0 && YesPrice) {
-    firstYesPrice = YesPrice[0];
+    const p = YesPrice[0];
+    firstYesPrice = (Number(parseInt(p).toFixed(2)) / 100).toString();
   }
 
   let firstNoPrice = "5";
@@ -17,7 +18,8 @@ export default function ScrollCard({ data }: { data: Stockdata }) {
   let NoPrice = Object.keys(data.orderBook.no); // First key
 
   if (NoPrice.length > 0 && NoPrice) {
-    firstNoPrice = NoPrice[0];
+    const p = NoPrice[0];
+    firstNoPrice = (Number(parseInt(p).toFixed(2)) / 100).toString();
   }
 
   return (
@@ -25,12 +27,21 @@ export default function ScrollCard({ data }: { data: Stockdata }) {
       className="flex flex-col bg-white border shadow-sm rounded-xl p-4 md:p-5  cursor-pointer  "
       onClick={() => navigate(`/order/${data.stockSymbol}`)}
     >
-      <img
-        height="60px"
-        width="60px"
-        src="https://probo.in/_next/image?url=https%3A%2F%2Fgumlet-images-bucket.s3.ap-south-1.amazonaws.com%2Fprobo_product_images%2FIMAGE_f19f81af-fdf7-47da-b360-c990246b148f.png&w=128&q=75"
-        alt=""
-      />
+      <div className=" flex justify-between items-center   ">
+        <img
+          height="60px"
+          width="60px"
+          src="https://probo.in/_next/image?url=https%3A%2F%2Fgumlet-images-bucket.s3.ap-south-1.amazonaws.com%2Fprobo_product_images%2FIMAGE_f19f81af-fdf7-47da-b360-c990246b148f.png&w=128&q=75"
+          alt="probo"
+        />
+
+        <p>
+          <span className="text-xl font-medium text-[#262626] font-work-sans">
+            {data.stockSymbol}
+          </span>
+        </p>
+      </div>
+
       <div className="flex ">
         <img
           height="20px"
