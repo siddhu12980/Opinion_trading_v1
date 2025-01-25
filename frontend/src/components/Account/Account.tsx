@@ -109,7 +109,7 @@ const Account = () => {
     return <div className="text-center py-10">Loading...</div>;
   if (!user.userId)
     return <div className="text-center py-10">Not logged in</div>;
-  if (isBalanceError)
+  if (isBalanceError || userPersonalStockData.isError)
     return (
       <div className="text-center py-10 text-red-500">
         {"Something went wrong"}

@@ -64,7 +64,7 @@ const NavbarUser = () => {
         <div className="flex px-2 py-2 border justify-between gap-5 border-opacity-45 border-t-gray-400 border-double cursor-pointer hover:bg-gray-50 transition-colors">
           <FaWallet
             size={18}
-            onClick={() => (window.location.href = "/account")}
+            onClick={() => (navigate("/account"), console.log("clicked"))}
           />
           <div className="  flex gap-2 " >
             <BiRupee size={22} /> {user.balance.freeBalances}

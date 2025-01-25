@@ -1,10 +1,14 @@
+import { useNavigate } from "react-router-dom"
 
 const Navbar = ({ onSignIn, onSignUp }:any) => {
+  const nagivate = useNavigate()
 
   return (
     <div className="flex justify-between w-full border-slate-200 border-b-2 pb-3">
       <div className="flex justify-between space-x-8">
-        <div className=" cursor-pointer" onClick={() => { window.location.href = ("/signup") }}>
+        <div className=" cursor-pointer" onClick={() => { 
+          nagivate("/")
+         }}>
           <img src="./logo.avif" />
         </div>
         <div className=" flex space-x-8 text-xl">
