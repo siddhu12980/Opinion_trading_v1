@@ -16,6 +16,8 @@ export const Modal = ({ isOpen, onClose, mode }: any) => {
   const [userId, setUserId] = useRecoilState(userIdSelector);
   const [showModal, setShowModal] = useState(false);
 
+  console.log("modal", userId);
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";

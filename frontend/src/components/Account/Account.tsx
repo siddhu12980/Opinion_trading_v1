@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useRecoilState } from "recoil";
 import axios from "axios";
 import { Wallet, Gift, RefreshCw, Lock } from "lucide-react";
@@ -39,6 +39,8 @@ const Account = () => {
       return response.data.data;
     },
   });
+
+  console.log(isBalanceError, balanceError,isBalanceSuccess);
 
   const stockData = useQuery({
     queryKey: ["event"],

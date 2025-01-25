@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import { BiRupee } from 'react-icons/bi';
 
 const GiftModel = ({ amount }: { amount: number }) => {
   return (

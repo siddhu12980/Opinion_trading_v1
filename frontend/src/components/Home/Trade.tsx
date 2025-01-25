@@ -49,7 +49,7 @@ export const Trade = () => {
     return <span>Error: {error.message}</span>;
   }
 
-  console.log(user);
+  console.log(user,data);
 
   return (
     <>
