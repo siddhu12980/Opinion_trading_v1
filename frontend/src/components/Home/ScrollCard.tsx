@@ -22,6 +22,13 @@ export default function ScrollCard({ data }: { data: Stockdata }) {
     firstNoPrice = (Number(parseInt(p).toFixed(2)) / 100).toString();
   }
 
+  let no_lengthh = Object.keys(data.orderBook.no).length || 0;
+  let yes_length = Object.keys(data.orderBook.yes).length || 0;
+
+  const total = no_lengthh + yes_length;
+
+  
+
   return (
     <div
       className="flex flex-col bg-white border shadow-sm rounded-xl p-4 md:p-5  cursor-pointer  "
@@ -50,7 +57,7 @@ export default function ScrollCard({ data }: { data: Stockdata }) {
           alt=""
         />{" "}
         <h1 className="text-sm text-[#545454] font-work-sans">
-          {YesPrice.length} Trades
+          {total} Trades
         </h1>
       </div>
 
